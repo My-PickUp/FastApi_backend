@@ -1,14 +1,15 @@
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from database import Base, engine, SessionLocal
-from schema import OfficeBooking, SchoolBooking
+from database import Base, engine, get_db
+from models import OfficeBooking, SchoolBooking, OTP
+from schema import OfficeBookingCreate, SchoolBookingCreate,OTPRequest,OTPVerification
 from datetime import datetime, timezone
-from pydantic import BaseModel
-from typing import List
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
+import random
+from string import digits
 
 
 
@@ -32,28 +33,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class OfficeBookingCreate(BaseModel):
-    name: str
-    mobile: str
-    pickup_location: str
-    drop_location: str
-    gender: str
-    pickup_time: str
-    return_time: str = None
-    want_return: bool
-    selected_days: List[str]
-
-class SchoolBookingCreate(BaseModel):
-    name: str
-    age: int
-    mobile: str
-    pickup_location: str
-    drop_location: str
-    gender: str
-    pickup_time: str
-    return_time: str = None
-    date: str
-
 
 @app.get('/awake')
 @limiter.limit("5/minute")
@@ -61,10 +40,46 @@ async def awake(request: Request):
     return {'message': 'I am awake'}
 
 
+@app.post('/generate-otp', status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
+async def generate_otp(request: Request, otp_request: OTPRequest, db: Session = Depends(get_db)):
+    phone_number = otp_request.phone_number
+    otp = ''.join(random.choice(digits) for _ in range(6))
+
+    # Ensure the generated OTP is not present in previous OTPs
+    while db.query(OTP).filter_by(otp=otp).first():
+        otp = ''.join(random.choice(digits) for _ in range(6))
+
+    otp_entry = OTP(phone_number=phone_number, otp=otp)
+    db.add(otp_entry)
+    db.commit()
+    return {'message': 'OTP generated successfully',
+            'OTP':otp}
+
+@app.post('/verify-otp')
+@limiter.limit("5/minute")
+async def verify_otp(request: Request, otp_verification: OTPVerification, db: Session = Depends(get_db)):
+    phone_number = otp_verification.phone_number
+    otp_entered = otp_verification.otp
+
+    # Retrieve stored OTP from the database
+    otp_entry = db.query(OTP).filter_by(phone_number=phone_number, otp=otp_entered).first()
+
+    if not otp_entry:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid OTP')
+
+    # If OTP is valid, retrieve associated bookings
+    office_bookings = db.query(OfficeBooking).filter_by(mobile=phone_number).all()
+    school_bookings = db.query(SchoolBooking).filter_by(mobile=phone_number).all()
+
+    return {'office_bookings': office_bookings, 'school_bookings': school_bookings}
+
+
+
+
 @app.post('/officeBookings')
 @limiter.limit("5/minute")
-async def office_booking_list_create(request: Request,booking_data: OfficeBookingCreate):
-    db = SessionLocal()
+async def office_booking_list_create(request: Request,booking_data: OfficeBookingCreate, db: Session = Depends(get_db)):
     mobile = booking_data.mobile
     existing_booking = db.query(OfficeBooking).filter_by(mobile=mobile).first()
 
@@ -106,8 +121,7 @@ async def office_booking_list_create(request: Request,booking_data: OfficeBookin
 
 @app.post('/schoolBookings')
 @limiter.limit("5/minute")
-async def school_booking_list_create(request: Request,booking_data: SchoolBookingCreate):
-    db = SessionLocal()
+async def school_booking_list_create(request: Request,booking_data: SchoolBookingCreate, db: Session = Depends(get_db)):
     mobile = booking_data.mobile
     existing_booking = db.query(SchoolBooking).filter_by(mobile=mobile).first()
 
