@@ -1,7 +1,7 @@
 
 from fastapi import Depends, FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from database import Base, engine, get_db
+from database import Base, engine, get_db, Session
 from models import OfficeBooking, SchoolBooking, OTP
 from schema import OfficeBookingCreate, SchoolBookingCreate,OTPRequest,OTPVerification
 from datetime import datetime, timezone
