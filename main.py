@@ -72,6 +72,9 @@ async def verify_otp(request: Request, otp_verification: OTPVerification, db: Se
     office_bookings = db.query(OfficeBooking).filter_by(mobile=phone_number).all()
     school_bookings = db.query(SchoolBooking).filter_by(mobile=phone_number).all()
 
+    if not office_bookings and not school_bookings:
+        return {'message': 'No entries found for the provided phone number'}
+
     return {'office_bookings': office_bookings, 'school_bookings': school_bookings}
 
 
