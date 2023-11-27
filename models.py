@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Float, Integer, String, Boolean, ForeignKey, DateTime, create_engine
-from sqlalchemy.orm import relationship, declarative_base, Session
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.sql import func
-from sqlalchemy.dialects.sqlite import DATETIME
+
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Float, func
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -11,14 +11,12 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     phone_number = Column(String, index=True, unique=True, nullable=False)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
+    name = Column(String, nullable=False)
     address = Column(String)
-    email = Column(String)
     active = Column(Boolean, default=True)
-    current_subscription_id = Column(Integer, ForeignKey("users_subscription.id"), nullable=True)
+    current_subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
 
-    subscriptions = relationship("UsersSubscription", back_populates="user")
+    subscriptions = relationship("UsersSubscription", back_populates="user", foreign_keys=[current_subscription_id])
     rides = relationship("RidesDetail", back_populates="user")
 
 class UsersSubscription(Base):
@@ -27,12 +25,12 @@ class UsersSubscription(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     subscription_plan = Column(String, nullable=False)
-    subscription_start_date = Column(DATETIME, server_default=func.now())
-    subscription_end_date = Column(DATETIME)
+    subscription_start_date = Column(DateTime, default=datetime.utcnow)
+    subscription_end_date = Column(DateTime)
     payment_status = Column(String)
     subscription_status = Column(String, default="active")
 
-    user = relationship("User", back_populates="subscriptions")
+    user = relationship("User", back_populates="subscriptions", foreign_keys=[user_id])
     rides = relationship("RidesDetail", back_populates="subscription")
 
 class RidesDetail(Base):
@@ -43,12 +41,12 @@ class RidesDetail(Base):
     driver_id = Column(Integer, ForeignKey("drivers.id"))
     subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
     start_location = Column(String)
-    start_latitude = Column(Float)  # New column for pickup latitude
-    start_longitude = Column(Float)  # New column for pickup longitude
+    start_latitude = Column(Float)
+    start_longitude = Column(Float)
     end_location = Column(String)
-    end_latitude = Column(Float)  # New column for drop latitude
-    end_longitude = Column(Float)  # New column for drop longitude
-    ride_date_time = Column(DATETIME, server_default=func.now())
+    end_latitude = Column(Float)
+    end_longitude = Column(Float)
+    ride_date_time = Column(DateTime, default=datetime.utcnow)
     fare = Column(Float)
     ride_status = Column(String)
     additional_ride_details = Column(String)
@@ -57,6 +55,13 @@ class RidesDetail(Base):
     subscription = relationship("UsersSubscription", back_populates="rides")
     driver = relationship("Driver", back_populates="rides")
 
+class Driver(Base):
+    __tablename__ = "drivers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # Add other driver-related fields as needed
+
+
 
 class VerificationCode(Base):
     __tablename__ = "verification_codes"
@@ -64,5 +69,5 @@ class VerificationCode(Base):
     id = Column(Integer, primary_key=True, index=True)
     phone_number = Column(String, nullable=False)
     code = Column(String, nullable=False)
-    created_at = Column(DATETIME, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
     status = Column(String, default="active")  # Add this line for the status field
