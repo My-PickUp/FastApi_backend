@@ -3,4 +3,6 @@ psycopg2-binary
 slowapi
 SQLAlchemy
 uvicorn
+python-jose
+cryptography
 

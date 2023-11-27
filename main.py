@@ -1,15 +1,17 @@
 
+import string, threading
+import random
 from fastapi import Depends, FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from database import Base, engine, get_db, Session
-from models import OfficeBooking, SchoolBooking, OTP
-from schema import OfficeBookingCreate, SchoolBookingCreate,OTPRequest,OTPVerification
-from datetime import datetime, timezone
+from database import Base, engine, get_db, Session, SessionLocal
+from models import User, VerificationCode
+# from schema import 
+from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
-import random
-from string import digits
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 
 
 
@@ -17,6 +19,11 @@ from string import digits
 Base.metadata.create_all(bind=engine)
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+
+
+SECRET_KEY = "@@_tge=7tux=#o-@hn_%ri2q#7qcs-q^qul!)&4tegy6j4&+=x"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 14400 # 10 days
 
 #Rate limit
 app.state.limiter = limiter
@@ -34,128 +41,87 @@ app.add_middleware(
 )
 
 
+# Threading Functions for multiple threads
+
+def delete_otp(phone_number: str):
+    try:
+        db = SessionLocal()
+        # Delete all OTPs for the specified phone number
+        db.query(VerificationCode).filter(
+            VerificationCode.phone_number == phone_number
+        ).delete()
+
+        db.commit()
+    finally:
+        db.close()
+
+
+# Helper functions
+def create_jwt_token(phone_number: str, expires_delta: timedelta = None):
+    to_encode = {"sub": phone_number}
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+# API Endpoints
+
 @app.get('/awake')
 @limiter.limit("5/minute")
 async def awake(request: Request):
     return {'message': 'I am awake'}
 
+# Endpoint to generate and send OTP to the user
+@app.post("/auth/generate-otp", response_model=None)
+def generate_otp(phone_number: str, db: Session = Depends(get_db)):
 
-@app.post('/generate-otp', status_code=status.HTTP_201_CREATED)
-@limiter.limit("5/minute")
-async def generate_otp(request: Request, otp_request: OTPRequest, db: Session = Depends(get_db)):
-    phone_number = otp_request.phone_number
-    otp = ''.join(random.choice(digits) for _ in range(6))
+    thread = threading.Thread(target=delete_otp, args=(phone_number))
+    thread.start()
+ 
+    user = db.query(User).filter(User.phone_number == phone_number).first()
 
-    # Ensure the generated OTP is not present in previous OTPs
-    while db.query(OTP).filter_by(otp=otp).first():
-        otp = ''.join(random.choice(digits) for _ in range(6))
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    otp_entry = OTP(phone_number=phone_number, otp=otp)
-    db.add(otp_entry)
+    # Generate a 6-digit OTP
+    otp = ''.join(random.choices(string.digits, k=6))
+
+    # Store the OTP in the database
+    db_otp = VerificationCode(phone_number=phone_number, code=otp)
+    db.add(db_otp)
     db.commit()
-    return {'message': 'OTP generated successfully',
-            'OTP':otp}
 
-@app.post('/verify-otp')
-@limiter.limit("5/minute")
-async def verify_otp(request: Request, otp_verification: OTPVerification, db: Session = Depends(get_db)):
-    phone_number = otp_verification.phone_number
-    otp_entered = otp_verification.otp
+    # Send OTP to the user (replace with your actual implementation)
+    # send_otp(phone_number, otp)
 
-    # Retrieve stored OTP from the database
-    otp_entry = db.query(OTP).filter_by(phone_number=phone_number, otp=otp_entered).first()
+    return {"otp": otp}
 
-    if not otp_entry:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid OTP')
+# Endpoint to verify OTP and return JWT token
+@app.post("/auth/verify-otp", response_model=str)
+def verify_otp(phone_number: str, otp: str, db: Session = Depends(get_db)):
+    stored_otp = db.query(VerificationCode).filter(
+        VerificationCode.phone_number == phone_number,
+        VerificationCode.code == otp,
+        VerificationCode.status == "active"
+    ).first()
 
-    # If OTP is valid, retrieve associated bookings
-    office_bookings = db.query(OfficeBooking).filter_by(mobile=phone_number).all()
-    school_bookings = db.query(SchoolBooking).filter_by(mobile=phone_number).all()
-
-    if not office_bookings and not school_bookings:
-        return {'message': 'No entries found for the provided phone number'}
-
-    return {'office_bookings': office_bookings, 'school_bookings': school_bookings}
-
-
-
-
-@app.post('/officeBookings')
-@limiter.limit("5/minute")
-async def office_booking_list_create(request: Request,booking_data: OfficeBookingCreate, db: Session = Depends(get_db)):
-    mobile = booking_data.mobile
-    existing_booking = db.query(OfficeBooking).filter_by(mobile=mobile).first()
-
-    if existing_booking:
-        # Update existing entry
-        existing_booking.name = booking_data.name
-        existing_booking.pickup_location = booking_data.pickup_location
-        existing_booking.drop_location = booking_data.drop_location
-        existing_booking.pickup_time = booking_data.pickup_time
-        existing_booking.return_time = booking_data.return_time
-        existing_booking.want_return = booking_data.want_return
-        existing_booking.selected_days = booking_data.selected_days  # Concatenate the days
-
-        db.commit()
-        db.refresh(existing_booking)
-        return existing_booking
-
-    else:
-        
-        # Create a new entry
-        booking = OfficeBooking(
-            name=booking_data.name,
-            mobile=booking_data.mobile,
-            pickup_location=booking_data.pickup_location,
-            drop_location=booking_data.drop_location,
-            gender=booking_data.gender,
-            pickup_time=booking_data.pickup_time,
-            return_time=booking_data.return_time,
-            want_return=booking_data.want_return,
-            created_at=datetime.now(timezone.utc),
-            selected_days= ' '.join(booking_data.selected_days)# Concatenate the days
+    if not stored_otp:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid OTP",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-        db.add(booking)
-        db.commit()
-        db.refresh(booking)
-        return booking
+    # Update OTP status to "expired" after successful verification
+    stored_otp.status = "expired"
+    db.commit()
 
+    # Generate JWT token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_jwt_token(phone_number, expires_delta=access_token_expires)
 
-@app.post('/schoolBookings')
-@limiter.limit("5/minute")
-async def school_booking_list_create(request: Request,booking_data: SchoolBookingCreate, db: Session = Depends(get_db)):
-    mobile = booking_data.mobile
-    existing_booking = db.query(SchoolBooking).filter_by(mobile=mobile).first()
-
-    if existing_booking:
-        existing_booking.name = booking_data.name
-        existing_booking.pickup_location = booking_data.pickup_location
-        existing_booking.drop_location = booking_data.drop_location
-        existing_booking.pickup_time = booking_data.pickup_time
-        existing_booking.return_time = booking_data.return_time
-        existing_booking.age = booking_data.age
-        existing_booking.date = booking_data.date
-
-        db.commit()
-        db.refresh(existing_booking)
-        return existing_booking
-
-    else:
-        booking = SchoolBooking(
-            name=booking_data.name,
-            age=booking_data.age,
-            mobile=booking_data.mobile,
-            pickup_location=booking_data.pickup_location,
-            drop_location=booking_data.drop_location,
-            gender=booking_data.gender,
-            pickup_time=booking_data.pickup_time,
-            return_time=booking_data.return_time,
-            date=booking_data.date,
-            created_at=datetime.now(timezone.utc),
-        )
-
-        db.add(booking)
-        db.commit()
-        db.refresh(booking)
-       
+    return access_token
