@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Float, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -23,21 +22,21 @@ class UsersSubscription(Base):
     __tablename__ = "users_subscription"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", name="fk_user_id"))  # Specify a unique name for the foreign key
     subscription_plan = Column(String, nullable=False)
     subscription_start_date = Column(DateTime, default=datetime.utcnow)
     subscription_end_date = Column(DateTime)
     payment_status = Column(String)
     subscription_status = Column(String, default="active")
 
-    user = relationship("User", back_populates="subscriptions", foreign_keys=[user_id])
+    user = relationship("User", back_populates="subscriptions", foreign_keys=[user_id], remote_side="User.id")
     rides = relationship("RidesDetail", back_populates="subscription")
 
 class RidesDetail(Base):
     __tablename__ = "rides_detail"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", name="fk_rides_user_id"))  # Specify a unique name for the foreign key
     driver_id = Column(Integer, ForeignKey("drivers.id"))
     subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
     start_location = Column(String)
@@ -55,12 +54,12 @@ class RidesDetail(Base):
     subscription = relationship("UsersSubscription", back_populates="rides")
     driver = relationship("Driver", back_populates="rides")
 
+
 class Driver(Base):
     __tablename__ = "drivers"
 
     id = Column(Integer, primary_key=True, index=True)
     # Add other driver-related fields as needed
-
 
 
 class VerificationCode(Base):
@@ -70,4 +69,4 @@ class VerificationCode(Base):
     phone_number = Column(String, nullable=False)
     code = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
-    status = Column(String, default="active")  # Add this line for the status field
+    status = Column(String, default="active")
