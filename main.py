@@ -1,11 +1,10 @@
-
 import string, threading
 import random
+import models
 from fastapi import Depends, FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from database import Base, engine, get_db, Session, SessionLocal
-from models import User, VerificationCode
-# from schema import 
+from database import engine, get_db, Session, SessionLocal
+from models import User, VerificationCode, UsersSubscription, RidesDetail, Base
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -43,17 +42,17 @@ app.add_middleware(
 
 # Threading Functions for multiple threads
 
-def delete_otp(phone_number: str):
-    try:
-        db = SessionLocal()
-        # Delete all OTPs for the specified phone number
-        db.query(VerificationCode).filter(
-            VerificationCode.phone_number == phone_number
-        ).delete()
+# def delete_otp(phone_number: str):
+#     try:
+#         db = SessionLocal()
+#         # Delete all OTPs for the specified phone number
+#         db.query(VerificationCode).filter(
+#             VerificationCode.phone_number == phone_number
+#         ).delete()
 
-        db.commit()
-    finally:
-        db.close()
+#         db.commit()
+#     finally:
+#         db.close()
 
 
 # Helper functions
@@ -79,13 +78,16 @@ async def awake(request: Request):
 @app.post("/auth/generate-otp", response_model=None)
 def generate_otp(phone_number: str, db: Session = Depends(get_db)):
 
-    thread = threading.Thread(target=delete_otp, args=(phone_number))
-    thread.start()
- 
     user = db.query(User).filter(User.phone_number == phone_number).first()
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        # If the user does not exist, create a new user with default values or nullable fields
+        new_user = User(phone_number=phone_number, name=phone_number)  # Set default values or nullable fields
+        db.add(new_user)
+        db.commit()
+
+        # Now, the user variable refers to the newly created user
+        user = new_user
 
     # Generate a 6-digit OTP
     otp = ''.join(random.choices(string.digits, k=6))

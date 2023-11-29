@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Float, func
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-
-Base = declarative_base()
+from database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -11,32 +9,41 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     phone_number = Column(String, index=True, unique=True, nullable=False)
     name = Column(String, nullable=False)
-    address = Column(String)
+    email = Column(String,nullable=True)
+    address = Column(String,nullable=True)
     active = Column(Boolean, default=True)
-    current_subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
+    gender = Column(String,nullable=True)
+    profile_photo = Column(String, nullable=True)  # Set nullable to True
+    emergency_contact_name = Column(String, nullable=True)  # Set nullable to True
+    emergency_contact_name_phone = Column(String, nullable=True)  # Set nullable to True
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
-    subscriptions = relationship("UsersSubscription", back_populates="user", foreign_keys=[current_subscription_id])
+  
+    subscriptions = relationship("UsersSubscription", back_populates="user")
     rides = relationship("RidesDetail", back_populates="user")
+
 
 class UsersSubscription(Base):
     __tablename__ = "users_subscription"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", name="fk_user_id"))  # Specify a unique name for the foreign key
+    user_id = Column(Integer, ForeignKey("users.id"))
     subscription_plan = Column(String, nullable=False)
     subscription_start_date = Column(DateTime, default=datetime.utcnow)
     subscription_end_date = Column(DateTime)
     payment_status = Column(String)
     subscription_status = Column(String, default="active")
 
-    user = relationship("User", back_populates="subscriptions", foreign_keys=[user_id], remote_side="User.id")
+    user = relationship("User", back_populates="subscriptions", remote_side="User.id")  # Set remote_side to User.id
     rides = relationship("RidesDetail", back_populates="subscription")
+
 
 class RidesDetail(Base):
     __tablename__ = "rides_detail"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", name="fk_rides_user_id"))  # Specify a unique name for the foreign key
+    user_id = Column(Integer, ForeignKey("users.id"))
     driver_id = Column(Integer, ForeignKey("drivers.id"))
     subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
     start_location = Column(String)
@@ -59,8 +66,8 @@ class Driver(Base):
     __tablename__ = "drivers"
 
     id = Column(Integer, primary_key=True, index=True)
-    # Add other driver-related fields as needed
 
+    rides = relationship("RidesDetail", back_populates="driver")
 
 class VerificationCode(Base):
     __tablename__ = "verification_codes"

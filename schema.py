@@ -23,9 +23,10 @@ class SchoolBookingCreate(BaseModel):
     return_time: str = None
     date: str
 
-class OTPRequest(BaseModel):
-    phone_number: str
-
-class OTPVerification(BaseModel):
+class UserVerify(BaseModel):
     phone_number: str
     otp: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
