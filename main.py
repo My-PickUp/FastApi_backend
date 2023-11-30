@@ -1,10 +1,11 @@
 import string, threading
 import random
 import models
-from fastapi import Depends, FastAPI, Request, HTTPException, status
+from fastapi import Depends, FastAPI, Request, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User, VerificationCode, UsersSubscription, RidesDetail, Base
+from schema import UserSchema,UserUpdateSchema
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -127,3 +128,81 @@ def verify_otp(phone_number: str, otp: str, db: Session = Depends(get_db)):
     access_token = create_jwt_token(phone_number, expires_delta=access_token_expires)
 
     return access_token
+
+@app.get("/get-user-details", response_model=UserSchema)
+def get_user_details(
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    # Verify the JWT token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # Retrieve user details from the database
+    user = db.query(User).filter(User.phone_number == phone_number).first()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return UserSchema(**user.__dict__)
+
+@app.put("/update-user-details", response_model=UserSchema)
+def update_user_details(
+    update_data: UserUpdateSchema,  # Change to UserSchema
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    # Verify the JWT token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    if all(value is None or value == "string" for value in update_data.dict().values()):
+        raise HTTPException(status_code=400, detail="No valid details provided for update")
+
+
+    # Retrieve user from the database
+    user = db.query(User).filter(User.phone_number == phone_number).first()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update user details based on the data provided in the request
+    for field, value in update_data.dict(exclude_unset=True).items():
+        # If the value is not None, update the user field
+        if value is not None and value != "string":
+            setattr(user, field, value)
+
+    # Update the 'updated_at' field
+    user.updated_at = datetime.utcnow()
+
+    db.commit()
+
+    # Fetch the updated user from the database
+    updated_user = db.query(User).filter(User.phone_number == phone_number).first()
+
+    # Return the updated user details
+    return UserSchema(**updated_user.__dict__)

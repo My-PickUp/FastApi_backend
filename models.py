@@ -3,23 +3,23 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     phone_number = Column(String, index=True, unique=True, nullable=False)
-    name = Column(String, nullable=False)
-    email = Column(String,nullable=True)
-    address = Column(String,nullable=True)
+    name = Column(String, nullable=False)  # Add this field
+    email = Column(String, nullable=True)
+    address = Column(String, nullable=True)
     active = Column(Boolean, default=True)
-    gender = Column(String,nullable=True)
+    gender = Column(String, nullable=True)
     profile_photo = Column(String, nullable=True)  # Set nullable to True
     emergency_contact_name = Column(String, nullable=True)  # Set nullable to True
-    emergency_contact_name_phone = Column(String, nullable=True)  # Set nullable to True
-    created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    emergency_contact_phone = Column(String, nullable=True)  # Set nullable to True
+    created_at = Column(DateTime, default=func.now())  # Add this field
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())  # Add this field
 
-  
     subscriptions = relationship("UsersSubscription", back_populates="user")
     rides = relationship("RidesDetail", back_populates="user")
 

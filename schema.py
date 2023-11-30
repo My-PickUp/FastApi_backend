@@ -1,32 +1,25 @@
 from pydantic import BaseModel
-from typing import List
+from typing import Optional
+from datetime import datetime
 
-class OfficeBookingCreate(BaseModel):
-    name: str
-    mobile: str
-    pickup_location: str
-    drop_location: str
-    gender: str
-    pickup_time: str
-    return_time: str = None
-    want_return: bool
-    selected_days: List[str]
+class UserSchema(BaseModel):
+    phone_number: Optional[str] = None
+    name: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    active: Optional[bool] = True
+    gender: Optional[str] = None
+    profile_photo: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    created_at: Optional[datetime] = None 
+    updated_at: Optional[datetime] = None 
 
-class SchoolBookingCreate(BaseModel):
-    name: str
-    age: int
-    mobile: str
-    pickup_location: str
-    drop_location: str
-    gender: str
-    pickup_time: str
-    return_time: str = None
-    date: str
-
-class UserVerify(BaseModel):
-    phone_number: str
-    otp: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+class UserUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    gender: Optional[str] = None
+    profile_photo: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
