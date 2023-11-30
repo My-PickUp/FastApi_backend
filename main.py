@@ -127,7 +127,7 @@ def verify_otp(phone_number: str, otp: str, db: Session = Depends(get_db)):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_jwt_token(phone_number, expires_delta=access_token_expires)
 
-    return access_token
+    return {"access_token": access_token}
 
 @app.get("/get-user-details", response_model=UserSchema)
 def get_user_details(
