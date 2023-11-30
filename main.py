@@ -104,7 +104,7 @@ def generate_otp(phone_number: str, db: Session = Depends(get_db)):
     return {"otp": otp}
 
 # Endpoint to verify OTP and return JWT token
-@app.post("/auth/verify-otp", response_model=str)
+@app.post("/auth/verify-otp")
 def verify_otp(phone_number: str, otp: str, db: Session = Depends(get_db)):
     stored_otp = db.query(VerificationCode).filter(
         VerificationCode.phone_number == phone_number,
