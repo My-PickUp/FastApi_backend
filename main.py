@@ -1,7 +1,7 @@
 import string, threading
 import random
 import models
-from fastapi import Depends, FastAPI, Request, HTTPException, status, Header
+from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User, VerificationCode, UsersSubscription, RidesDetail, Base
@@ -12,6 +12,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from collections import deque
 
 
 
@@ -41,7 +42,7 @@ app.add_middleware(
 )
 
 
-# Threading Functions for multiple threads
+# Threading/Backgound Functions for multiple threads
 
 # def delete_otp(phone_number: str):
 #     try:
@@ -54,6 +55,43 @@ app.add_middleware(
 #         db.commit()
 #     finally:
 #         db.close()
+
+########### OTP Add to the db ############
+async def add_otp_to_db(phone_number,otp_number):
+    try:
+        db = SessionLocal()
+        db_otp = VerificationCode(phone_number=phone_number, code=otp_number)
+        db.add(db_otp)
+        db.commit()
+    finally:
+        db.close()
+        
+
+########### OTP Add to the db ############
+async def add_newsuser_to_db(phone_number):
+    try:
+        db = SessionLocal()
+        new_user = User(phone_number=phone_number, name=phone_number)  # Set default values or nullable fields
+        db.add(new_user)
+        db.commit()
+    finally:
+        db.close()
+        
+
+
+
+
+
+########### OTP Generation ############
+otp_queue = deque()
+
+async def refill_otp():
+    new_otps = [''.join(random.choices(string.digits, k=6)) for _ in range(20)]
+    otp_queue.extend(new_otps)
+
+#Intial Generation
+refill_otp()
+
 
 
 # Helper functions
@@ -77,29 +115,23 @@ async def awake(request: Request):
 
 # Endpoint to generate and send OTP to the user
 @app.post("/auth/generate-otp", response_model=None)
-def generate_otp(phone_number: str, db: Session = Depends(get_db)):
+async def generate_otp(phone_number: str, background_tasks: BackgroundTasks,  db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.phone_number == phone_number).first()
 
     if not user:
         # If the user does not exist, create a new user with default values or nullable fields
-        new_user = User(phone_number=phone_number, name=phone_number)  # Set default values or nullable fields
-        db.add(new_user)
-        db.commit()
-
-        # Now, the user variable refers to the newly created user
-        user = new_user
+        background_tasks.add_task(add_newsuser_to_db, phone_number)
 
     # Generate a 6-digit OTP
-    otp = ''.join(random.choices(string.digits, k=6))
-
-    # Store the OTP in the database
-    db_otp = VerificationCode(phone_number=phone_number, code=otp)
-    db.add(db_otp)
-    db.commit()
-
-    # Send OTP to the user (replace with your actual implementation)
-    # send_otp(phone_number, otp)
+    if otp_queue:
+        otp = otp_queue.popleft()
+    else:
+        otp = ''.join(random.choices(string.digits, k=6))
+    # Start otp queue refill background non thread blocking task
+    background_tasks.add_task(refill_otp)
+    
+    background_tasks.add_task(add_otp_to_db, phone_number, otp)
 
     return {"otp": otp}
 
