@@ -115,7 +115,8 @@ async def awake(request: Request):
 
 # Endpoint to generate and send OTP to the user
 @app.post("/auth/generate-otp", response_model=None)
-async def generate_otp(phone_number: str, background_tasks: BackgroundTasks,  db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def generate_otp(request: Request, phone_number: str, background_tasks: BackgroundTasks,  db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.phone_number == phone_number).first()
 
@@ -137,7 +138,8 @@ async def generate_otp(phone_number: str, background_tasks: BackgroundTasks,  db
 
 # Endpoint to verify OTP and return JWT token
 @app.post("/auth/verify-otp")
-def verify_otp(phone_number: str, otp: str, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def verify_otp(request: Request,phone_number: str, otp: str, db: Session = Depends(get_db)):
     stored_otp = db.query(VerificationCode).filter(
         VerificationCode.phone_number == phone_number,
         VerificationCode.code == otp,
@@ -162,7 +164,9 @@ def verify_otp(phone_number: str, otp: str, db: Session = Depends(get_db)):
     return {"access_token": access_token}
 
 @app.get("/get-user-details", response_model=UserSchema)
+@limiter.limit("5/minute")
 def get_user_details(
+    request: Request,
     phone_number: str = Header(..., description="User's phone number"),
     token: str = Header(..., description="JWT token for authentication"),
     db: Session = Depends(get_db)
@@ -191,7 +195,9 @@ def get_user_details(
     return UserSchema(**user.__dict__)
 
 @app.put("/update-user-details", response_model=UserSchema)
+@limiter.limit("5/minute")
 def update_user_details(
+    request: Request,
     update_data: UserUpdateSchema,  # Change to UserSchema
     phone_number: str = Header(..., description="User's phone number"),
     token: str = Header(..., description="JWT token for authentication"),
