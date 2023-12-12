@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, Ba
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User, VerificationCode, UsersSubscription, RidesDetail, Base
-from schema import UserSchema,UserUpdateSchema
+from schema import UserSchema,UserUpdateSchema, RideDetailSchema, CreateUserSubscriptionAndRidesSchema
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -104,6 +104,28 @@ def create_jwt_token(phone_number: str, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def expire_existing_subscription(user_id: int, subscription_plan: str):
+    try:
+        db = SessionLocal()
+        existing_subscription = (
+            db.query(UsersSubscription)
+            .filter(
+                UsersSubscription.user_id == user_id,
+                UsersSubscription.subscription_plan == subscription_plan,
+                UsersSubscription.subscription_status == "active"
+            )
+            .first()
+        )
+    
+        if existing_subscription:
+            existing_subscription.subscription_status = "expired"
+            db.commit()
+            db.refresh(existing_subscription)
+    finally:
+        db.close()
+
 
 
 # API Endpoints
@@ -244,3 +266,66 @@ def update_user_details(
 
     # Return the updated user details
     return UserSchema(**updated_user.__dict__)
+
+
+@app.post("/create_user_subscription_and_rides")
+async def create_user_subscription_and_rides(
+    payload: CreateUserSubscriptionAndRidesSchema,
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+        else:
+            # Your business logic here
+            user_id = payload.user_id
+            subscription_plan = payload.subscription_plan
+            ride_details = payload.ride_details
+
+            # Expire existing active subscription for the same plan
+            expire_existing_subscription(db, user_id, subscription_plan)
+
+            # Create user subscription
+            user_subscription = UsersSubscription(
+                user_id=user_id,
+                subscription_plan=subscription_plan
+            )
+            db.add(user_subscription)
+            db.commit()
+            db.refresh(user_subscription)
+
+            # Create ride details for each entry in ride_details
+            for ride_data in ride_details:
+                ride_detail = RidesDetail(
+                    user_id=user_id,
+                    subscription_id=user_subscription.id,
+                    start_location=ride_data.pickup_address,
+                    end_location=ride_data.drop_address,
+                    ride_date_time=datetime.strptime(ride_data.datetime, "%Y-%m-%d %H:%M:%S"),
+                    start_latitude=float(ride_data.pickup_lat),
+                    start_longitude=float(ride_data.pickup_long),
+                    end_latitude=float(ride_data.drop_lat),
+                    end_longitude=float(ride_data.drop_long),
+                )
+                db.add(ride_detail)
+                db.commit()
+                db.refresh(ride_detail)
+
+    except JWTError:
+        raise credentials_exception
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+    return {"Subscription ID": user_subscription.id}

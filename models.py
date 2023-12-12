@@ -28,11 +28,9 @@ class UsersSubscription(Base):
     __tablename__ = "users_subscription"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
     subscription_plan = Column(String, nullable=False)
-    subscription_start_date = Column(DateTime, default=datetime.utcnow)
-    subscription_end_date = Column(DateTime)
-    payment_status = Column(String)
+    payment_status = Column(String,default=False,nullable=False)
     subscription_status = Column(String, default="active")
 
     user = relationship("User", back_populates="subscriptions", remote_side="User.id")  # Set remote_side to User.id
@@ -43,7 +41,7 @@ class RidesDetail(Base):
     __tablename__ = "rides_detail"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id")) 
     driver_id = Column(Integer, ForeignKey("drivers.id"))
     subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
     start_location = Column(String)
@@ -53,7 +51,6 @@ class RidesDetail(Base):
     end_latitude = Column(Float)
     end_longitude = Column(Float)
     ride_date_time = Column(DateTime, default=datetime.utcnow)
-    fare = Column(Float)
     ride_status = Column(String)
     additional_ride_details = Column(String)
 
