@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, Ba
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User, VerificationCode, UsersSubscription, RidesDetail, Base
-from schema import UserSchema,UserUpdateSchema, RideDetailSchema, CreateUserSubscriptionAndRidesSchema
+from schema import UserSchema,UserUpdateSchema, RideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -329,3 +329,13 @@ async def create_user_subscription_and_rides(
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
     return {"Subscription ID": user_subscription.id}
+
+# Temporary
+
+@app.post("/leadtodb", response_model=str)
+async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
+    db_user = User(**user_create.dict(), created_at=datetime.now(), updated_at=datetime.now())
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return "User created successfully"
