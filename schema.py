@@ -1,6 +1,19 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
+
+# temporary
+class UserCreate(BaseModel):
+    phone_number: str
+    name: str
+    email: str = None
+    address: str = None
+    active: bool = True
+    gender: str = None
+    profile_photo: str = None
+    emergency_contact_name: str = None
+    emergency_contact_phone: str = None
+
 
 class UserSchema(BaseModel):
     phone_number: Optional[str] = None
@@ -23,3 +36,18 @@ class UserUpdateSchema(BaseModel):
     profile_photo: Optional[str] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+
+
+class RideDetailSchema(BaseModel):
+    pickup_address: str
+    drop_address: str
+    datetime: str
+    pickup_lat: float
+    pickup_long: float
+    drop_lat: float
+    drop_long: float
+
+class CreateUserSubscriptionAndRidesSchema(BaseModel):
+    user_id: int
+    subscription_plan: str
+    ride_details: List[RideDetailSchema]
