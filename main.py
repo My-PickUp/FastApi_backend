@@ -284,9 +284,9 @@ async def create_user_subscription_and_rides(
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        decoded_payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         # Ensure that the phone number from the headers matches the one in the JWT token
-        if payload.get("sub") != phone_number:
+        if decoded_payload.get("sub") != phone_number:
             raise credentials_exception
         else:
             # Your business logic here
@@ -315,7 +315,7 @@ async def create_user_subscription_and_rides(
                     pickup_address_type = ride_data.pickup_address_type,
                     drop_address=ride_data.drop_address,
                     drop_address_type = ride_data.drop_address_type,
-                    ride_date_time=datetime.strptime(ride_data.datetime, "%Y-%m-%d %H:%M:%S"),
+                    ride_date_time=datetime.strptime(ride_data.datetime, "%Y-%m-%d %H:%M:%S.%f"),
                     pickup_latitude=float(ride_data.pickup_lat),
                     pickup_longitude=float(ride_data.pickup_long),
                     drop_latitude=float(ride_data.drop_lat),
