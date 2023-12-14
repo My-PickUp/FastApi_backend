@@ -11,8 +11,7 @@ class User(Base):
     phone_number = Column(String, index=True, unique=True, nullable=False)
     name = Column(String, nullable=False)  # Add this field
     email = Column(String, nullable=True)
-    pickup_address = Column(String, nullable=True)
-    dropoff_address = Column(String, nullable=True)
+    address = Column(String, nullable=True)
     active = Column(Boolean, default=True)
     gender = Column(String, nullable=True)
     profile_photo = Column(String, nullable=True)  # Set nullable to True
