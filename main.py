@@ -295,7 +295,7 @@ async def create_user_subscription_and_rides(
             ride_details = payload.ride_details
 
             # Expire existing active subscription for the same plan
-            expire_existing_subscription(db, user_id, subscription_plan)
+            expire_existing_subscription(user_id, subscription_plan)
 
             # Create user subscription
             user_subscription = UsersSubscription(
@@ -311,13 +311,15 @@ async def create_user_subscription_and_rides(
                 ride_detail = RidesDetail(
                     user_id=user_id,
                     subscription_id=user_subscription.id,
-                    start_location=ride_data.pickup_address,
-                    end_location=ride_data.drop_address,
+                    pickup_address=ride_data.pickup_address,
+                    pickup_address_type = ride_data.pickup_address_type,
+                    drop_address=ride_data.drop_address,
+                    drop_address_type = ride_data.drop_address_type,
                     ride_date_time=datetime.strptime(ride_data.datetime, "%Y-%m-%d %H:%M:%S"),
-                    start_latitude=float(ride_data.pickup_lat),
-                    start_longitude=float(ride_data.pickup_long),
-                    end_latitude=float(ride_data.drop_lat),
-                    end_longitude=float(ride_data.drop_long),
+                    pickup_latitude=float(ride_data.pickup_lat),
+                    pickup_longitude=float(ride_data.pickup_long),
+                    drop_latitude=float(ride_data.drop_lat),
+                    drop_longitude=float(ride_data.drop_long),
                 )
                 db.add(ride_detail)
                 db.commit()

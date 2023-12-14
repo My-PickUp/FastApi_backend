@@ -44,12 +44,14 @@ class RidesDetail(Base):
     user_id = Column(Integer, ForeignKey("users.id")) 
     driver_id = Column(Integer, ForeignKey("drivers.id"))
     subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
-    start_location = Column(String)
-    start_latitude = Column(Float)
-    start_longitude = Column(Float)
-    end_location = Column(String)
-    end_latitude = Column(Float)
-    end_longitude = Column(Float)
+    pickup_address = Column(String)
+    pickup_address_type = Column(String)
+    pickup_latitude = Column(Float)
+    pickup_longitude = Column(Float)
+    drop_address_type = Column(String)
+    drop_address = Column(String)
+    drop_latitude = Column(Float)
+    drop_longitude = Column(Float)
     ride_date_time = Column(DateTime, default=datetime.utcnow)
     ride_status = Column(String)
     additional_ride_details = Column(String)
@@ -63,7 +65,6 @@ class Driver(Base):
     __tablename__ = "drivers"
 
     id = Column(Integer, primary_key=True, index=True)
-
     rides = relationship("RidesDetail", back_populates="driver")
 
 class VerificationCode(Base):
