@@ -7,8 +7,7 @@ class UserCreate(BaseModel):
     phone_number: str
     name: str
     email: str = None
-    pickup_address: Optional[str] = None
-    dropoff_address: Optional[str] = None
+    address: str = None
     active: bool = True
     gender: str = None
     profile_photo: str = None
@@ -20,8 +19,7 @@ class UserSchema(BaseModel):
     phone_number: Optional[str] = None
     name: Optional[str] = None
     email: Optional[str] = None
-    pickup_address: Optional[str] = None
-    dropoff_address: Optional[str] = None
+    address: Optional[str] = None
     active: Optional[bool] = True
     gender: Optional[str] = None
     profile_photo: Optional[str] = None
@@ -33,8 +31,7 @@ class UserSchema(BaseModel):
 class UserUpdateSchema(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
-    pickup_address: Optional[str] = None
-    dropoff_address: Optional[str] = None
+    address: Optional[str] = None
     gender: Optional[str] = None
     profile_photo: Optional[str] = None
     emergency_contact_name: Optional[str] = None
