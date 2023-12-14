@@ -17,6 +17,7 @@ class UserCreate(BaseModel):
 
 
 class UserSchema(BaseModel):
+    id: Optional[int] = None
     phone_number: Optional[str] = None
     name: Optional[str] = None
     email: Optional[str] = None
