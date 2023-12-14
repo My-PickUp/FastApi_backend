@@ -293,10 +293,6 @@ async def create_user_subscription_and_rides(
             user_id = payload.user_id
             subscription_plan = payload.subscription_plan
             ride_details = payload.ride_details
-            driver_id = payload.driver_id
-            pickup_address_type = payload.pickup_address_type
-            drop_address_type = payload.drop_address_type
-
 
             # Expire existing active subscription for the same plan
             expire_existing_subscription(db, user_id, subscription_plan)
@@ -312,10 +308,8 @@ async def create_user_subscription_and_rides(
 
             # Create ride details for each entry in ride_details
             for ride_data in ride_details:
-
                 ride_detail = RidesDetail(
-                    user_id= user_id,
-                    driver_id=driver_id,
+                    user_id=user_id,
                     subscription_id=user_subscription.id,
                     start_location=ride_data.pickup_address,
                     end_location=ride_data.drop_address,
