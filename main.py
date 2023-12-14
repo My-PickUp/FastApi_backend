@@ -485,7 +485,7 @@ def get_user_subscriptions_and_rides(
         return {
             "user_id": user.id,
             "active_subscriptions": len(active_subscriptions),
-            "active_subscription_rides": [ride.id for ride in active_subscription_rides],
+            "active_subscription_rides": [ride_detail.dict() for ride_detail in active_subscription_rides],
             "non_active_subscription_ride_count": non_active_subscription_ride_count
         }
 
