@@ -42,8 +42,11 @@ class UserUpdateSchema(BaseModel):
 
 
 class RideDetailSchema(BaseModel):
+    driver_id: str
     pickup_address: str
+    pickup_address_type: str
     drop_address: str
+    drop_address_type: str
     datetime: str
     pickup_lat: float
     pickup_long: float
