@@ -57,4 +57,7 @@ class RideDetailSchema(BaseModel):
 class CreateUserSubscriptionAndRidesSchema(BaseModel):
     user_id: int
     subscription_plan: str
+    driver_id: int
+    pickup_address_type: str
+    drop_address_type: str
     ride_details: List[RideDetailSchema]
