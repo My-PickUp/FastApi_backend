@@ -346,6 +346,7 @@ async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
 @app.post("/create-address", response_model=AddressSchema)
 @limiter.limit("15/minute")
 def create_address(
+    request: Request,
     address_data: AddressCreateSchema,
     phone_number: str = Header(..., description="User's phone number"),
     token: str = Header(..., description="JWT token for authentication"),
@@ -381,6 +382,7 @@ def create_address(
 @app.get("/get-addresses", response_model=List[AddressSchema])
 @limiter.limit("15/minute")
 def get_addresses(
+    request: Request,
     phone_number: str = Header(..., description="User's phone number"),
     token: str = Header(..., description="JWT token for authentication"),
     db: Session = Depends(get_db)
