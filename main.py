@@ -1,11 +1,11 @@
 import string, threading
 import random
-import models
+from typing import List
 from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
-from models import User, VerificationCode, UsersSubscription, RidesDetail, Base
-from schema import UserSchema,UserUpdateSchema, RideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate
+from models import User, VerificationCode, UsersSubscription, RidesDetail, Base,Address
+from schema import UserSchema,UserUpdateSchema, RideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -341,3 +341,66 @@ async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     return "User created successfully"
+
+
+@app.post("/create-address", response_model=AddressSchema)
+@limiter.limit("15/minute")
+def create_address(
+    address_data: AddressCreateSchema,
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    # Verify the JWT token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # Create address in the database
+    address = Address(
+        phone_number=address_data.phone_number,
+        address_type=address_data.address_type,
+        address=address_data.address
+    )
+    db.add(address)
+    db.commit()
+    db.refresh(address)
+
+    return AddressSchema(**address.__dict__)
+
+@app.get("/get-addresses", response_model=List[AddressSchema])
+@limiter.limit("15/minute")
+def get_addresses(
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    # Verify the JWT token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # Retrieve addresses from the database for the specified phone number
+    addresses = db.query(Address).filter(Address.phone_number == phone_number).all()
+
+    return [AddressSchema(**address.__dict__) for address in addresses]

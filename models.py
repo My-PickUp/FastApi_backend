@@ -60,6 +60,13 @@ class RidesDetail(Base):
     subscription = relationship("UsersSubscription", back_populates="rides")
     driver = relationship("Driver", back_populates="rides")
 
+class Address(Base):
+    __tablename__ = "addresses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    phone_number = Column(String, ForeignKey("users.phone_number"), primary_key=True, index=True)
+    address_type = Column(String, nullable=False)
+    address = Column(String, nullable=False)
 
 class Driver(Base):
     __tablename__ = "drivers"

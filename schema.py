@@ -54,3 +54,14 @@ class CreateUserSubscriptionAndRidesSchema(BaseModel):
     user_id: int
     subscription_plan: str
     ride_details: List[RideDetailSchema]
+
+class AddressCreateSchema(BaseModel):
+    phone_number: str
+    address_type: str
+    address: str
+
+class AddressSchema(BaseModel):
+    id: int
+    phone_number: str
+    address_type: str
+    address: str
