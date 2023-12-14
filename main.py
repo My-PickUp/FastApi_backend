@@ -95,6 +95,24 @@ refill_otp()
 
 
 # Helper functions
+
+# Encryption function
+def get_current_user(phone_number: str = Header(..., description="User's phone number"),
+                      token: str = Header(..., description="JWT token for authentication")):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+        return payload
+    except JWTError:
+        raise credentials_exception
+
+
 def create_jwt_token(phone_number: str, expires_delta: timedelta = None):
     to_encode = {"sub": phone_number}
     if expires_delta:
@@ -406,3 +424,70 @@ def get_addresses(
     addresses = db.query(Address).filter(Address.phone_number == phone_number).all()
 
     return [AddressSchema(**address.__dict__) for address in addresses]
+
+
+@app.get("/get-user-subscriptions-and-rides")
+def get_user_subscriptions_and_rides(
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+
+        user = db.query(User).filter(User.phone_number == phone_number).first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        active_subscriptions = (
+            db.query(UsersSubscription)
+            .filter(
+                UsersSubscription.user_id == user.id,
+                UsersSubscription.subscription_status == "active"
+            )
+            .all()
+        )
+
+        active_subscription_rides = []
+        for subscription in active_subscriptions:
+            rides = (
+                db.query(RidesDetail)
+                .filter(RidesDetail.subscription_id == subscription.id)
+                .all()
+            )
+            active_subscription_rides.extend(rides)
+
+        non_active_subscriptions = (
+            db.query(UsersSubscription)
+            .filter(
+                UsersSubscription.user_id == user.id,
+                UsersSubscription.subscription_status == "expired"
+            )
+            .all()
+        )
+
+        non_active_subscription_ride_count = sum(
+            db.query(RidesDetail)
+            .filter(RidesDetail.subscription_id == subscription.id)
+            .count()
+            for subscription in non_active_subscriptions
+        )
+
+        return {
+            "user_id": user.id,
+            "active_subscriptions": len(active_subscriptions),
+            "active_subscription_rides": [ride.id for ride in active_subscription_rides],
+            "non_active_subscription_ride_count": non_active_subscription_ride_count
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
