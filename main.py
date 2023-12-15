@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, Ba
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User, VerificationCode, UsersSubscription, RidesDetail, Base,Address
-from schema import UserSchema,UserUpdateSchema, RideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema
+from schema import UserSchema,UserUpdateSchema, RideDetailSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -481,11 +481,11 @@ def get_user_subscriptions_and_rides(
             .count()
             for subscription in non_active_subscriptions
         )
-
+        print(active_subscription_rides)
         return {
             "user_id": user.id,
             "active_subscriptions": len(active_subscriptions),
-            "active_subscription_rides": [ride_detail.dict() for ride_detail in active_subscription_rides],
+            "active_subscription_rides": [GetRideDetailSchema(**ride_detail.__dict__) for ride_detail in active_subscription_rides],
             "non_active_subscription_ride_count": non_active_subscription_ride_count
         }
 

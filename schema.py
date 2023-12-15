@@ -65,3 +65,20 @@ class AddressSchema(BaseModel):
     phone_number: str
     address_type: str
     address: str
+
+class GetRideDetailSchema(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    driver_id: Optional[int] = None
+    subscription_id: Optional[int] = None
+    pickup_address: Optional[str] = None
+    pickup_address_type: Optional[str] = None
+    pickup_latitude: Optional[float] = None
+    pickup_longitude: Optional[float] = None
+    drop_address_type: Optional[str] = None
+    drop_address: Optional[str] = None
+    drop_latitude: Optional[float] = None
+    drop_longitude: Optional[float] = None
+    ride_date_time: Optional[datetime] = None
+    ride_status: Optional[str] = None
+    additional_ride_details: Optional[str] = None
