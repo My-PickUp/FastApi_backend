@@ -361,7 +361,7 @@ async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
     return "User created successfully"
 
 
-@app.post("/create-address", response_model=AddressSchema)
+@app.post("/create-address")
 @limiter.limit("15/minute")
 def create_address(
     request: Request,
@@ -387,7 +387,7 @@ def create_address(
 
     # Create address in the database
     address = Address(
-        phone_number=address_data.phone_number,
+        phone_number=phone_number,
         address_type=address_data.address_type,
         address=address_data.address
     )
@@ -395,7 +395,9 @@ def create_address(
     db.commit()
     db.refresh(address)
 
-    return AddressSchema(**address.__dict__)
+    # Return a success message as a string
+    success_message = f"Successfully added address for phone number: {phone_number}"
+    return success_message
 
 @app.get("/get-addresses", response_model=List[AddressSchema])
 @limiter.limit("15/minute")
@@ -448,6 +450,7 @@ def get_user_subscriptions_and_rides(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
+        # Get active subscriptions
         active_subscriptions = (
             db.query(UsersSubscription)
             .filter(
@@ -457,15 +460,21 @@ def get_user_subscriptions_and_rides(
             .all()
         )
 
+        # Collect upcoming rides for active subscriptions
         active_subscription_rides = []
         for subscription in active_subscriptions:
             rides = (
                 db.query(RidesDetail)
-                .filter(RidesDetail.subscription_id == subscription.id)
+                .filter(
+                    RidesDetail.subscription_id == subscription.id,
+                    RidesDetail.ride_status == "Upcoming",
+                    RidesDetail.ride_date_time >= datetime.utcnow()  # Filter upcoming rides
+                )
                 .all()
             )
             active_subscription_rides.extend(rides)
 
+        # Count non-active subscription rides
         non_active_subscriptions = (
             db.query(UsersSubscription)
             .filter(
@@ -481,7 +490,7 @@ def get_user_subscriptions_and_rides(
             .count()
             for subscription in non_active_subscriptions
         )
-        print(active_subscription_rides)
+
         return {
             "user_id": user.id,
             "active_subscriptions": len(active_subscriptions),

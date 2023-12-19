@@ -56,7 +56,6 @@ class CreateUserSubscriptionAndRidesSchema(BaseModel):
     ride_details: List[RideDetailSchema]
 
 class AddressCreateSchema(BaseModel):
-    phone_number: str
     address_type: str
     address: str
 

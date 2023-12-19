@@ -21,6 +21,7 @@ class User(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())  # Add this field
 
     subscriptions = relationship("UsersSubscription", back_populates="user")
+    addresses = relationship("Address", back_populates="user")
     rides = relationship("RidesDetail", back_populates="user")
 
 
@@ -42,7 +43,7 @@ class RidesDetail(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id")) 
-    driver_id = Column(Integer, ForeignKey("drivers.id"))
+    driver_phone = Column(Integer)
     subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
     pickup_address = Column(String)
     pickup_address_type = Column(String)
@@ -53,7 +54,7 @@ class RidesDetail(Base):
     drop_latitude = Column(Float)
     drop_longitude = Column(Float)
     ride_date_time = Column(DateTime, default=datetime.utcnow)
-    ride_status = Column(String)
+    ride_status = Column(String, default="Upcoming")
     additional_ride_details = Column(String)
 
     user = relationship("User", back_populates="rides")
@@ -61,18 +62,15 @@ class RidesDetail(Base):
     driver = relationship("Driver", back_populates="rides")
 
 class Address(Base):
-    __tablename__ = "addresses"
+    __tablename__ = "users_addresses"
 
     id = Column(Integer, primary_key=True, index=True)
-    phone_number = Column(String, ForeignKey("users.phone_number"), primary_key=True, index=True)
+    phone_number = Column(String, ForeignKey("users.phone_number"), index=True)
     address_type = Column(String, nullable=False)
     address = Column(String, nullable=False)
 
-class Driver(Base):
-    __tablename__ = "drivers"
+    user = relationship("User", back_populates="addresses")  # Added this line
 
-    id = Column(Integer, primary_key=True, index=True)
-    rides = relationship("RidesDetail", back_populates="driver")
 
 class VerificationCode(Base):
     __tablename__ = "verification_codes"
