@@ -39,7 +39,7 @@ class UsersSubscription(Base):
 
 
 class RidesDetail(Base):
-    __tablename__ = "rides_detail"
+    __tablename__ = "users_rides_detail"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id")) 

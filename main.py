@@ -459,20 +459,24 @@ def get_user_subscriptions_and_rides(
             )
             .all()
         )
-
+        
         # Collect upcoming rides for active subscriptions
         active_subscription_rides = []
         for subscription in active_subscriptions:
+            print(subscription)
             rides = (
                 db.query(RidesDetail)
                 .filter(
                     RidesDetail.subscription_id == subscription.id,
                     RidesDetail.ride_status == "Upcoming",
-                    RidesDetail.ride_date_time >= datetime.utcnow()  # Filter upcoming rides
+                    # RidesDetail.ride_date_time >=  datetime.utcnow()  # Filter upcoming rides
                 )
                 .all()
             )
+            
             active_subscription_rides.extend(rides)
+        
+        
 
         # Count non-active subscription rides
         non_active_subscriptions = (
