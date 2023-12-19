@@ -59,7 +59,6 @@ class RidesDetail(Base):
 
     user = relationship("User", back_populates="rides")
     subscription = relationship("UsersSubscription", back_populates="rides")
-    driver = relationship("Driver", back_populates="rides")
 
 class Address(Base):
     __tablename__ = "users_addresses"
