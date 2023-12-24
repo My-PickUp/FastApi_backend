@@ -68,7 +68,7 @@ class AddressSchema(BaseModel):
 class GetRideDetailSchema(BaseModel):
     id: int
     user_id: Optional[int] = None
-    driver_id: Optional[int] = None
+    driver_phone: Optional[int] = None
     subscription_id: Optional[int] = None
     pickup_address: Optional[str] = None
     pickup_address_type: Optional[str] = None
