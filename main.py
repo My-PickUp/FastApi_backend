@@ -179,7 +179,7 @@ async def generate_otp(request: Request, phone_number: str, background_tasks: Ba
 # Endpoint to verify OTP and return JWT token
 @app.post("/auth/verify-otp")
 @limiter.limit("15/minute")
-def verify_otp(request: Request,phone_number: str, otp: str, db: Session = Depends(get_db)):
+async def verify_otp(request: Request,phone_number: str, otp: str, db: Session = Depends(get_db)):
     stored_otp = db.query(VerificationCode).filter(
         VerificationCode.phone_number == phone_number,
         VerificationCode.code == otp,
@@ -500,6 +500,56 @@ def get_user_subscriptions_and_rides(
             "active_subscriptions": len(active_subscriptions),
             "active_subscription_rides": [GetRideDetailSchema(**ride_detail.__dict__) for ride_detail in active_subscription_rides],
             "non_active_subscription_ride_count": non_active_subscription_ride_count
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
+
+# Api for Admin Dashboard
+@app.get("/getUserRides")
+def get_user_subscriptions_and_rides(
+    phone_number: str ,
+    db: Session = Depends(get_db)
+):
+    
+    try:
+
+        user = db.query(User).filter(User.phone_number == phone_number).first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Get active subscriptions
+        active_subscriptions = (
+            db.query(UsersSubscription)
+            .filter(
+                UsersSubscription.user_id == user.id,
+                UsersSubscription.subscription_status == "active"
+            )
+            .all()
+        )
+        
+        # Collect upcoming rides for active subscriptions
+        active_subscription_rides = []
+        for subscription in active_subscriptions:
+            print(subscription.id)
+            rides = (
+                db.query(RidesDetail)
+                .filter(
+                    RidesDetail.subscription_id == subscription.id,
+                    RidesDetail.ride_status == "Upcoming",
+                    # RidesDetail.ride_date_time >=  datetime.utcnow()  # Filter upcoming rides
+                )
+                .all()
+            )
+             
+            active_subscription_rides.extend(rides)
+
+
+        return {
+            "user_id": user.id,
+            "active_subscription_rides": [GetRideDetailSchema(**ride_detail.__dict__) for ride_detail in active_subscription_rides],
         }
 
     except Exception as e:
