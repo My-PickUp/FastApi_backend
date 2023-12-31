@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, Ba
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User, VerificationCode, UsersSubscription, RidesDetail, Base,Address
-from schema import UserSchema,UserUpdateSchema, RideDetailSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema
+from schema import UserSchema,UserUpdateSchema, RideDetailSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -505,6 +505,95 @@ def get_user_subscriptions_and_rides(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
+
+@app.put("/reschedule-ride")
+async def reschedule_ride(
+    reschedule_data: RescheduleRideSchema,
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    # Verify the JWT token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # Retrieve the ride from the database
+    ride = db.query(RidesDetail).filter(RidesDetail.id == reschedule_data.ride_id).first()
+
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    # Check if the ride is associated with the user
+    if ride.user.phone_number != phone_number:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    # Mark the ride status as "Rescheduled"
+    ride.ride_status = "Rescheduled"
+
+    # Append the new reschedule datetime to additional_ride_details
+    if not ride.additional_ride_details:
+        ride.additional_ride_details = str(reschedule_data.new_datetime)
+    else:
+        ride.additional_ride_details += f", {reschedule_data.new_datetime}"
+
+    db.commit()
+    db.refresh(ride)
+
+    return GetRideDetailSchema(**ride.__dict__)
+
+@app.put("/cancel-ride/{ride_id}")
+async def cancel_ride(
+    ride_id: int,
+    phone_number: str = Header(..., description="User's phone number"),
+    token: str = Header(..., description="JWT token for authentication"),
+    db: Session = Depends(get_db)
+):
+    # Verify the JWT token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # Retrieve the ride from the database
+    ride = db.query(RidesDetail).filter(RidesDetail.id == ride_id).first()
+
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    # Check if the ride is associated with the user
+    if ride.user.phone_number != phone_number:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    # Mark the ride status as "Cancelled"
+    ride.ride_status = "Cancelled"
+
+    db.commit()
+    db.refresh(ride)
+
+    return GetRideDetailSchema(**ride.__dict__)
+
+
+
+
+
 
 # Api for Admin Dashboard
 @app.get("/getUserRides")
