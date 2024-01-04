@@ -43,7 +43,7 @@ class RidesDetail(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id")) 
-    driver_phone = Column(Integer)
+    driver_phone = Column(String)
     subscription_id = Column(Integer, ForeignKey("users_subscription.id"))
     pickup_address = Column(String)
     pickup_address_type = Column(String)
