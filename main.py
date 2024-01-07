@@ -79,9 +79,6 @@ async def add_newsuser_to_db(phone_number):
         
 
 
-
-
-
 ########### OTP Generation ############
 otp_queue = deque()
 
@@ -592,9 +589,6 @@ async def cancel_ride(
 
 
 
-
-
-
 # Api for Admin Dashboard
 @app.get("/getUserRides")
 def get_user_subscriptions_and_rides(
@@ -643,3 +637,36 @@ def get_user_subscriptions_and_rides(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@app.put("/edit_ride_driver_phone/{ride_id}", response_model=GetRideDetailSchema)
+def edit_ride_driver_phone(ride_id: int, driver_phone: str, db: Session = Depends(get_db)):
+    """
+    Edit the driver phone for a specific ride.
+    """
+    ride = db.query(RidesDetail).filter(RidesDetail.id == ride_id).first()
+    if ride is None:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    ride.driver_phone = driver_phone
+    db.commit()
+    db.refresh(ride)
+    
+    return ride
+
+
+@app.put("/reschedule_ride/{ride_id}", response_model=GetRideDetailSchema)
+def reschedule_ride(ride_id: int, reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
+    """
+    Reschedule the date and time for a specific ride.
+    """
+    ride = db.query(RidesDetail).filter(RidesDetail.id == ride_id).first()
+    if ride is None:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    new_datetime = datetime.strptime(reschedule_data.new_datetime, "%Y-%m-%dT%H:%M:%S")
+    ride.ride_date_time = new_datetime
+    
+    db.commit()
+    db.refresh(ride)
+    
+    return ride
