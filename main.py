@@ -638,7 +638,7 @@ def get_user_subscriptions_and_rides(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-@app.put("/edit_ride_driver_phone/{ride_id}", response_model=GetRideDetailSchema)
+@app.put("/edit_ride_driver_phone/{ride_id}")
 def edit_ride_driver_phone(ride_id: int, driver_phone: str, db: Session = Depends(get_db)):
     """
     Edit the driver phone for a specific ride.
@@ -651,22 +651,22 @@ def edit_ride_driver_phone(ride_id: int, driver_phone: str, db: Session = Depend
     db.commit()
     db.refresh(ride)
     
-    return ride
+    return f"Driver Phone updated successfully for Ride ID: {ride_id} to {driver_phone}"
 
 
 @app.put("/reschedule_ride/", response_model=GetRideDetailSchema)
-def reschedule_ride(ride_id: int, reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
+def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
     """
     Reschedule the date and time for a specific ride.
     """
-    ride = db.query(RidesDetail).filter(RidesDetail.id == ride_id).first()
+    ride = db.query(RidesDetail).filter(RidesDetail.id == reschedule_data.ride_id).first()
     if ride is None:
         raise HTTPException(status_code=404, detail="Ride not found")
     
-    new_datetime = datetime.strptime(reschedule_data.new_datetime, "%Y-%m-%dT%H:%M:%S")
-    ride.ride_date_time = new_datetime
-    
+    new_datetime = datetime.strptime(reschedule_data.new_datetime, "%Y-%m-%d %H:%M:%S.%f")
+    ride.ride_date_time = new_datetime  
+     
     db.commit()
     db.refresh(ride)
     
-    return ride
+    return f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"
