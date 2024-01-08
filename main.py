@@ -654,7 +654,7 @@ def edit_ride_driver_phone(ride_id: int, driver_phone: str, db: Session = Depend
     return ride
 
 
-@app.put("/reschedule_ride/{ride_id}", response_model=GetRideDetailSchema)
+@app.put("/reschedule_ride/", response_model=GetRideDetailSchema)
 def reschedule_ride(ride_id: int, reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
     """
     Reschedule the date and time for a specific ride.
