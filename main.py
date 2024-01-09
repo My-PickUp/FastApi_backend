@@ -651,11 +651,11 @@ def edit_ride_driver_phone(ride_id: int, driver_phone: str, db: Session = Depend
     db.commit()
     db.refresh(ride)
     
-    return f"Driver Phone updated successfully for Ride ID: {ride_id} to {driver_phone}"
+    return {"message": f"Driver Phone updated successfully for Ride ID: {ride_id} to {driver_phone}"}
 
 
-@app.put("/reschedule_ride/", response_model=GetRideDetailSchema)
-def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
+@app.put("/reschedule_ride/")
+async def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
     """
     Reschedule the date and time for a specific ride.
     """
@@ -663,10 +663,10 @@ def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = Depends
     if ride is None:
         raise HTTPException(status_code=404, detail="Ride not found")
     
-    new_datetime = datetime.strptime(reschedule_data.new_datetime, "%Y-%m-%d %H:%M:%S.%f")
-    ride.ride_date_time = new_datetime  
+    new_datetime = reschedule_data.new_datetime
+    ride.ride_date_time = new_datetime 
      
     db.commit()
     db.refresh(ride)
     
-    return f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"
+    return {"message": f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"}
