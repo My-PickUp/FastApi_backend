@@ -670,3 +670,56 @@ async def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = D
     db.refresh(ride)
     
     return {"message": f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"}
+
+
+
+@app.get("/get-last-subscription-details")
+async def get_latest_subscription(
+    user_id: int,
+    subscription_plan: str,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Query the database to get the most recent subscription with the specified criteria
+        latest_subscription = (
+            db.query(UsersSubscription)
+            .filter(
+                UsersSubscription.user_id == user_id,
+                UsersSubscription.subscription_plan.ilike(f"%{subscription_plan}%")
+            )
+            .order_by(UsersSubscription.created_at.desc())
+            .first()
+        )
+
+        if not latest_subscription:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching subscription found")
+
+        subscription_rides = (
+            db.query(RidesDetail)
+            .filter(RidesDetail.subscription_id == latest_subscription.id)
+            .all()
+        )
+
+        if not subscription_rides:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No rides found for the specified subscription")
+        
+        canceled_rides = 0
+        completed_rides = 0
+
+        for ride in subscription_rides:
+            if ride.ride_status == "Cancelled":
+                canceled_rides += 1
+            elif ride.ride_status == "Completed":
+                completed_rides += 1
+
+        ride_stats = {
+            "subscription_date": latest_subscription.created_at,
+            "total_rides": len(subscription_rides),
+            "canceled_rides": canceled_rides,
+            "completed_rides": completed_rides
+        }
+
+        return ride_stats
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
