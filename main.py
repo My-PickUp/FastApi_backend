@@ -503,7 +503,7 @@ def get_user_subscriptions_and_rides(
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
 
-@app.put("/reschedule-ride")
+@app.put("/request-reschedule-ride")
 async def reschedule_ride(
     reschedule_data: RescheduleRideSchema,
     phone_number: str = Header(..., description="User's phone number"),
