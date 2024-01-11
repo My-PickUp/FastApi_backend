@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, Ba
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User, VerificationCode, UsersSubscription, RidesDetail, Base,Address
-from schema import UserSchema,UserUpdateSchema, RideDetailSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema
+from schema import UserSchema,UserUpdateSchema, RideDetailSchema,UpdateRideStatusSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -720,6 +720,33 @@ async def get_latest_subscription(
         }
 
         return ride_stats
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
+
+@app.put("/updateRideStatus")
+def update_ride_status(
+    ride_id: int,
+    update_data: UpdateRideStatusSchema,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Query the database to get the ride with the specified ride_id
+        ride = db.query(RidesDetail).filter(RidesDetail.id == ride_id).first()
+
+        if not ride:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ride not found")
+
+        # Update the ride status based on the provided data
+        new_status = update_data.newStatus  # Assuming newStatus is a string (e.g., "completed", "cancelled", "upcoming")
+        if new_status not in ["Completed", "Cancelled", "Upcoming"]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ride status")
+
+        ride.ride_status = new_status
+        db.commit()
+        db.refresh(ride)
+
+        return GetRideDetailSchema(**ride.__dict__)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")

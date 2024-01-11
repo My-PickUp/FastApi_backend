@@ -85,3 +85,6 @@ class GetRideDetailSchema(BaseModel):
 class RescheduleRideSchema(BaseModel):
     ride_id: int
     new_datetime: datetime
+
+class UpdateRideStatusSchema(BaseModel):
+    newStatus: str
