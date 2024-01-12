@@ -739,7 +739,7 @@ def update_ride_status(
 
         # Update the ride status based on the provided data
         new_status = update_data.newStatus  # Assuming newStatus is a string (e.g., "completed", "cancelled", "upcoming")
-        if new_status not in ["Completed", "Cancelled", "Upcoming"]:
+        if new_status not in ["Completed", "Cancelled", "Ongoing"]:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ride status")
 
         ride.ride_status = new_status
