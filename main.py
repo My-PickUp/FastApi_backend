@@ -386,8 +386,11 @@ def create_address(
     address = Address(
         phone_number=phone_number,
         address_type=address_data.address_type,
-        address=address_data.address
+        address=address_data.address,
+        latitude=address_data.latitude,
+        longitude=address_data.longitude
     )
+    
     db.add(address)
     db.commit()
     db.refresh(address)

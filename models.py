@@ -67,6 +67,8 @@ class Address(Base):
     phone_number = Column(String, ForeignKey("users.phone_number"), index=True)
     address_type = Column(String, nullable=False)
     address = Column(String, nullable=False)
+    latitude = Column(Float, nullable=True)  
+    longitude = Column(Float, nullable=True) 
 
     user = relationship("User", back_populates="addresses")  # Added this line
 
@@ -79,3 +81,4 @@ class VerificationCode(Base):
     code = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     status = Column(String, default="active")
+

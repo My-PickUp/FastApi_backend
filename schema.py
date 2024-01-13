@@ -58,6 +58,9 @@ class CreateUserSubscriptionAndRidesSchema(BaseModel):
 class AddressCreateSchema(BaseModel):
     address_type: str
     address: str
+    latitude: float
+    longitude: float
+
 
 class AddressSchema(BaseModel):
     id: int
