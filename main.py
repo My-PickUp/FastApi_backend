@@ -700,29 +700,36 @@ async def get_latest_subscription(
     db: Session = Depends(get_db)
 ):
     try:
-        # Query the database to get the most recent subscription with the specified criteria
-        latest_subscription = (
+        # Query the database to get the most recent subscriptions with the specified criteria
+        latest_subscriptions = (
             db.query(UsersSubscription)
             .filter(
                 UsersSubscription.user_id == user_id,
                 UsersSubscription.subscription_plan.ilike(f"%{subscription_plan}%")
             )
             .order_by(UsersSubscription.created_at.desc())
-            .first()
+            .limit(2)  # Limit to the top 2 subscriptions
+            .all()
         )
 
-        if not latest_subscription:
+        if not latest_subscriptions:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching subscription found")
+
+        if len(latest_subscriptions) == 1:
+            # Only one subscription, return the message
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Second latest subscription does not exist")
+
+        second_latest_subscription = latest_subscriptions[1]
 
         subscription_rides = (
             db.query(RidesDetail)
-            .filter(RidesDetail.subscription_id == latest_subscription.id)
+            .filter(RidesDetail.subscription_id == second_latest_subscription.id)
             .all()
         )
 
         if not subscription_rides:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No rides found for the specified subscription")
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No rides found for the second-latest subscription")
+
         canceled_rides = 0
         completed_rides = 0
 
@@ -733,7 +740,7 @@ async def get_latest_subscription(
                 completed_rides += 1
 
         ride_stats = {
-            "subscription_date": latest_subscription.created_at,
+            "subscription_date": second_latest_subscription.created_at,
             "total_rides": len(subscription_rides),
             "canceled_rides": canceled_rides,
             "completed_rides": completed_rides
@@ -743,7 +750,8 @@ async def get_latest_subscription(
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
-
+    
+    
 @app.put("/updateRideStatus")
 def update_ride_status(
     ride_id: int,
