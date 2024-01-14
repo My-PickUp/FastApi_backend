@@ -1,4 +1,4 @@
-import string, threading
+import string, requests
 import random
 from typing import List
 from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, BackgroundTasks
@@ -390,7 +390,7 @@ def create_address(
         latitude=address_data.latitude,
         longitude=address_data.longitude
     )
-    
+
     db.add(address)
     db.commit()
     db.refresh(address)
@@ -583,12 +583,27 @@ async def cancel_ride(
         raise HTTPException(status_code=403, detail="Permission denied")
 
     # Mark the ride status as "Cancelled"
+    # Make a request to the other endpoint
+    cancel_customer_ride_url = 'https://driverappbackend.onrender.com/api/cancelCustomerRide/'
+    data = {"customer_ride_id": ride_id}
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token}'  # Assuming your token is used for authentication
+    }
+
+    response = requests.post(cancel_customer_ride_url, json=data, headers=headers)
+
+    # Check the response status code
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to cancel customer ride from driver backend side")
+
     ride.ride_status = "Cancelled"
 
     db.commit()
     db.refresh(ride)
 
-    return GetRideDetailSchema(**ride.__dict__)
+    return f"Ride with Ride ID {ride_id} Cancelled"
 
 
 
@@ -667,6 +682,26 @@ async def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = D
         raise HTTPException(status_code=404, detail="Ride not found")
     
     new_datetime = reschedule_data.new_datetime
+    
+    customer_reschedule_url = 'https://driverappbackend.onrender.com/api/customerRideReschedule/'
+    data = {
+        "customer_ride_id": reschedule_data.ride_id,
+        "ride_date_time": new_datetime
+    }
+
+    headers = {
+        'Content-Type': 'application/json',
+        # Add any other headers you may need
+    }
+
+    response = requests.post(customer_reschedule_url, json=data, headers=headers)
+
+    # Check the response status code
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to reschedule customer ride issue from driver backend api")
+
+
+    
     ride.ride_date_time = new_datetime 
      
     db.commit()
