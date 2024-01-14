@@ -359,29 +359,11 @@ async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/create-address")
-@limiter.limit("15/minute")
 def create_address(
-    request: Request,
+    phone_number:str,
     address_data: AddressCreateSchema,
-    phone_number: str = Header(..., description="User's phone number"),
-    token: str = Header(..., description="JWT token for authentication"),
     db: Session = Depends(get_db)
 ):
-    # Verify the JWT token
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        # Ensure that the phone number from the headers matches the one in the JWT token
-        if payload.get("sub") != phone_number:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
     # Create address in the database
     address = Address(
         phone_number=phone_number,
