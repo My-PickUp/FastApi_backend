@@ -677,12 +677,12 @@ async def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = D
         # Add any other headers you may need
     }
 
-    response = requests.post(customer_reschedule_url, json=data, headers=headers)
+#     response = requests.post(customer_reschedule_url, json=data, headers=headers)
 
-# Check the response status code
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to reschedule customer ride issue from driver backend api")
-    
+# # Check the response status code
+#     if response.status_code != 200:
+#         raise HTTPException(status_code=500, detail="Failed to reschedule customer ride issue from driver backend api")
+     
     ride.ride_date_time = new_datetime
     ride.ride_status = "Upcoming"
      
