@@ -751,9 +751,9 @@ async def get_latest_subscription(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
     
-    
+
 @app.put("/updateRideStatus")
-def update_ride_status(
+async def update_ride_status(
     ride_id: int,
     update_data: UpdateRideStatusSchema,
     db: Session = Depends(get_db)

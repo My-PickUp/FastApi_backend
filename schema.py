@@ -67,6 +67,8 @@ class AddressSchema(BaseModel):
     phone_number: str
     address_type: str
     address: str
+    latitude: float
+    longitude: float
 
 class GetRideDetailSchema(BaseModel):
     id: int
