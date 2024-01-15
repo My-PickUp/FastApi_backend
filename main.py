@@ -1,4 +1,4 @@
-import string, requests
+import string, requests, httpx
 import random
 from typing import List
 from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, BackgroundTasks
@@ -664,7 +664,22 @@ async def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = D
         raise HTTPException(status_code=404, detail="Ride not found")
     
     new_datetime = reschedule_data.new_datetime
+    new_datetime_str = new_datetime.isoformat()
     
+    # Make an internal request to the specified URL
+    url = 'https://driverappbackend.onrender.com/api/customerRideReschedule/'
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "customer_ride_id": reschedule_data.ride_id,
+        "ride_date_time": new_datetime_str # Convert datetime to ISO 8601 format
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=data)
+
+    if response.status_code != 200:
+        # Handle error from the internal request
+        raise HTTPException(status_code=response.status_code, detail=f"Internal request failed: {response.text}")
 
     ride.ride_date_time = new_datetime
     ride.ride_status = "Upcoming"
