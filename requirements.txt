@@ -4,6 +4,7 @@ psycopg2-binary
 slowapi
 SQLAlchemy
 uvicorn
+httpx
 python-jose
 cryptography
 
