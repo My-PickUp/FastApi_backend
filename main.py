@@ -694,7 +694,9 @@ async def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = D
 
 
 @app.get("/get-last-subscription-details")
+@limiter.limit("15/minute")
 async def get_latest_subscription(
+    request: Request,
     user_id: int,
     subscription_plan: str,
     db: Session = Depends(get_db)
