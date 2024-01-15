@@ -664,33 +664,13 @@ async def reschedule_ride(reschedule_data: RescheduleRideSchema, db: Session = D
         raise HTTPException(status_code=404, detail="Ride not found")
     
     new_datetime = reschedule_data.new_datetime
-    new_datetime_str = new_datetime.isoformat()
     
-    customer_reschedule_url = 'https://driverappbackend.onrender.com/api/customerRideReschedule/'
-    data = {
-        "customer_ride_id": reschedule_data.ride_id,
-        "ride_date_time": new_datetime_str
-    }
 
-    headers = {
-        'Content-Type': 'application/json',
-        # Add any other headers you may need
-    }
-
-#     response = requests.post(customer_reschedule_url, json=data, headers=headers)
-
-# # Check the response status code
-#     if response.status_code != 200:
-#         raise HTTPException(status_code=500, detail="Failed to reschedule customer ride issue from driver backend api")
-     
     ride.ride_date_time = new_datetime
     ride.ride_status = "Upcoming"
      
     db.commit()
-    db.refresh(ride)
 
-    
-    
     return {"message": f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"}
 
 
