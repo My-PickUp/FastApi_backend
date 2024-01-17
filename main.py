@@ -797,11 +797,17 @@ async def add_users(file: UploadFile = File(...), db : Session = Depends(get_db)
             gender=temp_gender,
             profile_photo=temp_profile_photo,
             emergency_contact__name=temp_emergency_contact_name,
-            emergency_contact__phone=temp_emergency_contact_phone,
+            emergency_contact__phone=temp_emergency_contact_phone
+        )
+        
+        price_pt = model.Price_per_trip(
+            phone_number=temp_phone_number,
+            name=temp_name,
             price_per_trip=temp_price_per_trip
         )
         
         db.add(new_record)
+        db.add(price_pt)
         
     db.commit()
     
