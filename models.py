@@ -83,3 +83,10 @@ class VerificationCode(Base):
     created_at = Column(DateTime, server_default=func.now())
     status = Column(String, default="active")
 
+class Price_per_trip(Base):
+    __tablename__ = "price_per_trips"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    price_per_trip = Column(Integer, nullable=False)
+    phone_number = Column(String, ForeignKey("users.phone_number"), index=True)
+    name = Column(String,ForeignKey("users.name"), nullable=False)
