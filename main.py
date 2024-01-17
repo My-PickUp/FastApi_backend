@@ -764,3 +764,77 @@ async def update_ride_status(
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
+
+@app.post("/add_users_file/")
+async def add_users(file: UploadFile = File(...), db : Session = Depends(get_db)):
+    content  = await file.read()
+    
+    if is_csv(content):
+        df = pd.read_csv(content)
+    elif is_excel(content):
+        df = pd.read_excel(content)
+    else:
+        raise ValueError("Unsupported format! Only CSV and Excel files are supported.")
+    
+    for index,rows in df.iterrows():
+        temp_phone_number = rows['phone_number']
+        temp_name = rows['name']
+        temp_email = rows['email']
+        temp_address = rows['address']
+        temp_active = rows['active']
+        temp_gender = rows['gender']
+        temp_profile_photo = rows['profile_photo']
+        temp_emergency_contact_name = rows['emergency_contact_name']
+        temp_emergency_contact_phone = rows['emergency_contact_phone']
+        temp_price_per_trip = rows['price_per_trip']
+        
+        new_record = model.User(
+            phone_number=temp_phone_number,
+            name=temp_name,
+            email=temp_email,
+            address=temp_address,
+            active=temp_active,
+            gender=temp_gender,
+            profile_photo=temp_profile_photo,
+            emergency_contact__name=temp_emergency_contact_name,
+            emergency_contact__phone=temp_emergency_contact_phone,
+            price_per_trip=temp_price_per_trip
+        )
+        
+        db.add(new_record)
+        
+    db.commit()
+    
+    return {"message" : "Data succesfully ingested"}
+        
+@app.post("/add_address_file/")
+async def add_address(file: UploadFile = File(...), db : Session = Depends(get_db)):
+    content  = await file.read()
+    
+    if is_csv(content):
+        df = pd.read_csv(content)
+    elif is_excel(content):
+        df = pd.read_excel(content)
+    else:
+        raise ValueError("Unsupported format! Only CSV and Excel files are supported.")
+    
+    for index,rows in df.iterrows():
+        temp_phone_number = rows['phone_number']
+        temp_address_type = rows['address_type']
+        temp_address = rows['address']
+        temp_lat = rows['lat']
+        temp_long = rows['long']
+        
+        new_record = model.Address(
+            phone_number=temp_phone_number,
+            address_type=temp_address_type,
+            lat=temp_lat,
+            address=temp_address,
+            long=temp_long
+        )
+        
+        db.add(new_record)
+        
+    db.commit()
+    
+    return {"message" : "Data succesfully ingested"}        
