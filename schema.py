@@ -93,3 +93,12 @@ class RescheduleRideSchema(BaseModel):
 
 class UpdateRideStatusSchema(BaseModel):
     newStatus: str
+
+class PriceCreateSchema(BaseModel):
+    phone_number: str
+    price_per_trip: float
+
+class GetPriceSchema(BaseModel):
+    id: int
+    phone_number: str
+    price_per_trip: float

@@ -84,9 +84,10 @@ class VerificationCode(Base):
     status = Column(String, default="active")
 
 class Price_per_trip(Base):
-    __tablename__ = "price_per_trips"
+    __tablename__ = "users_pricing"
     
     id = Column(Integer, primary_key=True, index=True)
-    price_per_trip = Column(Integer, nullable=False)
+    price_per_trip = Column(Float, nullable=False,default=0.0)
     phone_number = Column(String, ForeignKey("users.phone_number"), index=True)
-    name = Column(String,ForeignKey("users.name"), nullable=False)
+
+    user = relationship("User", back_populates="addresses")

@@ -5,8 +5,8 @@ from typing import List
 from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
-from models import User, VerificationCode, UsersSubscription, RidesDetail, Base,Address
-from schema import UserSchema,UserUpdateSchema, RideDetailSchema,UpdateRideStatusSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema
+from models import User,Price_per_trip, VerificationCode, UsersSubscription, RidesDetail, Base,Address
+from schema import UserSchema,GetPriceSchema,PriceCreateSchema,UserUpdateSchema, RideDetailSchema,UpdateRideStatusSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -765,82 +765,52 @@ async def update_ride_status(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
 
-@app.post("/add_users_file/")
-async def add_users(file: UploadFile = File(...), db : Session = Depends(get_db)):
-    content  = await file.read()
-    
-    if is_csv(content):
-        df = pd.read_csv(content)
-    elif is_excel(content):
-        df = pd.read_excel(content)
-    else:
-        raise ValueError("Unsupported format! Only CSV and Excel files are supported.")
-    
-    for index,rows in df.iterrows():
-        temp_phone_number = rows['phone_number']
-        temp_name = rows['name']
-        temp_email = rows['email']
-        temp_address = rows['address']
-        temp_active = rows['active']
-        temp_gender = rows['gender']
-        temp_profile_photo = rows['profile_photo']
-        temp_emergency_contact_name = rows['emergency_contact_name']
-        temp_emergency_contact_phone = rows['emergency_contact_phone']
-        temp_price_per_trip = rows['price_per_trip']
-        
-        new_record = model.User(
-            phone_number=temp_phone_number,
-            name=temp_name,
-            email=temp_email,
-            address=temp_address,
-            active=temp_active,
-            gender=temp_gender,
-            profile_photo=temp_profile_photo,
-            emergency_contact__name=temp_emergency_contact_name,
-            emergency_contact__phone=temp_emergency_contact_phone
-        )
-        
-        price_pt = model.Price_per_trip(
-            phone_number=temp_phone_number,
-            name=temp_name,
-            price_per_trip=temp_price_per_trip
-        )
-        
-        db.add(new_record)
-        db.add(price_pt)
-        
+
+@app.post("/create-user-price")
+def create_address(
+    price_data: PriceCreateSchema,
+    db: Session = Depends(get_db)
+):
+    # Create address in the database
+    price = Price_per_trip(
+        phone_number=price_data.phone_number,
+        price_per_trip=price_data.price_per_trip
+    )
+
+    db.add(price)
     db.commit()
+
+    # Return a success message as a string
+    success_message = f"Successfully added price for phone number: {price_data.phone_number}"
+    return success_message
+
+@app.post("/update-user-price")
+async def update_price_per_trip(
+    price_data: PriceCreateSchema,
+    db: Session = Depends(get_db)
+):
+    try:
+        price_per_trip = db.query(Price_per_trip).filter(Price_per_trip.phone_number == price_data.phone_number).first()
+
+        if not price_per_trip:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price per trip not found")
+
+        # Update the price data
+        for key, value in price_data.dict().items():
+            setattr(price_per_trip, key, value)
+
+        db.commit()
+
+
+        return f"Successfully Updated price for phone number: {price_data.phone_number}"
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
     
-    return {"message" : "Data succesfully ingested"}
-        
-@app.post("/add_address_file/")
-async def add_address(file: UploadFile = File(...), db : Session = Depends(get_db)):
-    content  = await file.read()
+@app.get("/get-price/{phone_number}", response_model=GetPriceSchema)
+async def get_price_by_phone_number(phone_number: str, db: Session = Depends(get_db)):
+    price = db.query(Price_per_trip).filter(Price_per_trip.phone_number == phone_number).first()
+    if not price:
+        raise HTTPException(status_code=404, detail=f"Price for phone number {phone_number} not found")
     
-    if is_csv(content):
-        df = pd.read_csv(content)
-    elif is_excel(content):
-        df = pd.read_excel(content)
-    else:
-        raise ValueError("Unsupported format! Only CSV and Excel files are supported.")
-    
-    for index,rows in df.iterrows():
-        temp_phone_number = rows['phone_number']
-        temp_address_type = rows['address_type']
-        temp_address = rows['address']
-        temp_lat = rows['lat']
-        temp_long = rows['long']
-        
-        new_record = model.Address(
-            phone_number=temp_phone_number,
-            address_type=temp_address_type,
-            lat=temp_lat,
-            address=temp_address,
-            long=temp_long
-        )
-        
-        db.add(new_record)
-        
-    db.commit()
-    
-    return {"message" : "Data succesfully ingested"}        
+    return price
