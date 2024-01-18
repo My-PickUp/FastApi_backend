@@ -23,6 +23,7 @@ class User(Base):
     subscriptions = relationship("UsersSubscription", back_populates="user")
     addresses = relationship("Address", back_populates="user")
     rides = relationship("RidesDetail", back_populates="user")
+    price = relationship("Price_per_trip", back_populates="user")
 
 
 class UsersSubscription(Base):
@@ -90,4 +91,4 @@ class Price_per_trip(Base):
     price_per_trip = Column(Float, nullable=False,default=0.0)
     phone_number = Column(String, ForeignKey("users.phone_number"), index=True)
 
-    user = relationship("User", back_populates="addresses")
+    user = relationship("User", back_populates="price")
