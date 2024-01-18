@@ -848,3 +848,35 @@ def get_payment_status(token: str = Header(..., description="JWT token for authe
             model.UsersSubscription.created_at == subquery).scalar()
     
     return payment_status
+
+@app.post("Latest_subscription_ride_count")
+def get_ride_count_status(token: str = Header(..., description="JWT token for authentication"), 
+                       user_id : str = Header(..., description="user_id"),
+                       phone_number: str = Header(..., description="User's phone number"),
+                       db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    #count of no of rides in the latest subscription
+    
+    subscription_ids = db.query(model.UsersSubscription.id).filter(
+                        model.UsersSubscription.user_id == user_id).filter(
+                         model.UsersSubscription.subscription_status == "active").all()
+                        
+    total_count = 0
+    
+    for i in subscription_ids:                 
+        count = db.query(func.count()).filter(model.RidesDetail.subscription_id == i).scalar()
+        total_count += count
+    
+    return total_count
