@@ -14,7 +14,8 @@ from slowapi.util import get_remote_address
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from collections import deque
-
+from sqlalchemy import func
+import model
 
 
 
@@ -814,3 +815,36 @@ async def get_price_by_phone_number(phone_number: str, db: Session = Depends(get
         raise HTTPException(status_code=404, detail=f"Price for phone number {phone_number} not found")
     
     return price
+
+@app.post("payment_status_of_latest_Subs")
+def get_payment_status(token: str = Header(..., description="JWT token for authentication"), 
+                       user_id : str = Header(..., description="user_id"),
+                       phone_number: str = Header(..., description="User's phone number"),
+                       db: Session = Depends(get_db)):
+    
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    #Res- payment status of the user_id of the latest subscription-Boolean
+    subquery = (
+        db.query(func.max(model.UsersSubscription.timestamp_column))
+        .filter(model.UsersSubscription.user_id == user_id)
+        .scalar()
+    )
+    
+    payment_status = db.query(model.UsersSubscription.payment_status).filter(
+            model.UsersSubscription.user_id == user_id).filter(
+            model.UsersSubscription.subscription_status == "active").filter(
+            model.UsersSubscription.created_at == subquery).scalar()
+    
+    return payment_status
