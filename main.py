@@ -816,7 +816,7 @@ async def get_price_by_phone_number(phone_number: str, db: Session = Depends(get
     
     return price
 
-@app.post("payment_status_of_latest_Subs")
+@app.post("/payment_status_of_latest_Subs/")
 def get_payment_status(token: str = Header(..., description="JWT token for authentication"), 
                        user_id : str = Header(..., description="user_id"),
                        phone_number: str = Header(..., description="User's phone number"),
@@ -837,7 +837,7 @@ def get_payment_status(token: str = Header(..., description="JWT token for authe
         raise credentials_exception
     #Res- payment status of the user_id of the latest subscription-Boolean
     subquery = (
-        db.query(func.max(model.UsersSubscription.timestamp_column))
+        db.query(func.max(model.UsersSubscription.created_at))
         .filter(model.UsersSubscription.user_id == user_id)
         .scalar()
     )
@@ -849,7 +849,7 @@ def get_payment_status(token: str = Header(..., description="JWT token for authe
     
     return payment_status
 
-@app.post("Latest_subscription_ride_count")
+@app.post("/Latest_subscription_ride_count/")
 def get_ride_count_status(token: str = Header(..., description="JWT token for authentication"), 
                        user_id : str = Header(..., description="user_id"),
                        phone_number: str = Header(..., description="User's phone number"),
