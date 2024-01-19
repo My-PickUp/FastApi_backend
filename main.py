@@ -877,6 +877,6 @@ def get_ride_count_status(token: str = Header(..., description="JWT token for au
     
     for i in subscription_ids:
         count = db.query(func.count()).filter(model.RidesDetail.subscription_id == i.id).scalar()
-        total_count += count
+        total_count = count
     
     return total_count
