@@ -850,8 +850,8 @@ def get_payment_status(token: str = Header(..., description="JWT token for authe
     return payment_status
 
 @app.post("/Latest_subscription_ride_count/")
-def get_ride_count_status(token: str = Header(..., description="JWT token for authentication"), 
-                       user_id : str = Header(..., description="user_id"),
+def get_ride_count_status(user_id : str,
+                        token: str = Header(..., description="JWT token for authentication"), 
                        phone_number: str = Header(..., description="User's phone number"),
                        db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
