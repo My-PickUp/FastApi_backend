@@ -816,8 +816,8 @@ async def get_price_by_phone_number(phone_number: str, db: Session = Depends(get
     
     return price
 
-@app.get("/payment_status_of_latest_Subs/")
-def get_payment_status(user_id : UserId,
+@app.get("/payment_status_of_latest_Subs/{user_id}")
+def get_payment_status(
                         token: str = Header(..., description="JWT token for authentication"),
                        phone_number: str = Header(..., description="User's phone number"),
                        db: Session = Depends(get_db)):
