@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, Ba
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db, Session, SessionLocal
 from models import User,Price_per_trip, VerificationCode, UsersSubscription, RidesDetail, Base,Address
-from schema import UserSchema,GetPriceSchema,PriceCreateSchema,UserUpdateSchema, RideDetailSchema,UpdateRideStatusSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema
+from schema import UserSchema,GetPriceSchema,PriceCreateSchema,UserUpdateSchema, RideDetailSchema,UpdateRideStatusSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema, UserId
 from datetime import datetime, timezone,timedelta
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
