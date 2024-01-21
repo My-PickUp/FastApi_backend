@@ -2,6 +2,9 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
+class UserId(BaseModel):
+    UserId : str
+
 # temporary
 class UserCreate(BaseModel):
     phone_number: str
