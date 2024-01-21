@@ -816,7 +816,7 @@ async def get_price_by_phone_number(phone_number: str, db: Session = Depends(get
     
     return price
 
-@app.post("/payment_status_of_latest_Subs/")
+@app.get("/payment_status_of_latest_Subs/")
 def get_payment_status(user_id : UserId,
                         token: str = Header(..., description="JWT token for authentication"),
                        phone_number: str = Header(..., description="User's phone number"),
@@ -849,7 +849,7 @@ def get_payment_status(user_id : UserId,
     
     return payment_status
 
-@app.post("/Latest_subscription_ride_count/")
+@app.get("/Latest_subscription_ride_count/")
 def get_ride_count_status(user_id : str = Header(..., description="user_id"),
                         token: str = Header(..., description="JWT token for authentication"), 
                        phone_number: str = Header(..., description="User's phone number"),
