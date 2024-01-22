@@ -105,3 +105,13 @@ class GetPriceSchema(BaseModel):
     id: int
     phone_number: str
     price_per_trip: float
+
+class UpdatePhoneNumberSchema(BaseModel):
+    phone_number: str
+    
+class UpdateActivityStatus(BaseModel):
+    is_active: bool
+    
+class UpdatePaymentStatusSchema(BaseModel):
+    to_active : bool
+    subs_id : int
