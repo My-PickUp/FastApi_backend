@@ -934,9 +934,9 @@ def update_active_status(user_id : int, activity : schema.UpdateActivityStatus, 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if activity == "True":
+    if activity == True:
         user.active = True
-    elif activity == "False":
+    elif activity == False:
         user.active = False
     else:
         return {"Error":"Invalid data sent."}
