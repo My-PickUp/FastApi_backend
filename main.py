@@ -881,7 +881,7 @@ def get_ride_count_status(user_id : str,
     
     return total_count
 
-@app.put("/change-address-of-user")
+@app.put("/change-address-of-user/")
 def change_address_of_user( user_id : int, new_address : AddressCreateSchema, db: Session = Depends(get_db)):
     
     user = db.query(User).filter(User.id == user_id).first()
@@ -903,3 +903,63 @@ def change_address_of_user( user_id : int, new_address : AddressCreateSchema, db
     db.commit()
     
     return {"message" : f"{new_address}"}
+
+#Make an api to change the phone number of user
+@app.put('/update_phone_number/')
+def update_phone_number(user_id : int, phone_number : schema.UpdatePhoneNumberSchema, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the new phone number is different from the existing one
+    if user.phone_number != phone_number:
+        user.phone_number = phone_number
+        db.commit()
+        return {"message": f"Phone number updated to {phone_number}"}
+    else:
+        return {"message": "Phone number is already set to the provided value"}
+
+#Make an api to change the status of user - active or inactive
+@app.put('/update_active_status/')
+def update_active_status(user_id : int, activity : schema.UpdateActivityStatus, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if activity == "True":
+        user.active = True
+    elif activity == "False":
+        user.active = False
+    else:
+        return {"Error":"Invalid data sent."}
+    
+    db.commit()
+    
+    return {"message" : f"for user {user} the activity status has been changed to  {activity}"}
+
+#Make an api to change the payment_status
+@app.put('/update_payment_status/')
+def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchema, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    sub_id = act_st.subs_id
+    act = act_st.to_active
+    
+    subscription = db.query(UsersSubscription).filter(UsersSubscription.id == sub_id).first()
+    
+    if act == True:
+        subscription.payment_status = True
+    elif act == False:
+        subscription.payment_status = False
+    else:
+        return {"Error":"Invalid data sent."}
+        
+    db.commit()
+    
+    return{True}
+    
