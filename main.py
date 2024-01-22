@@ -891,12 +891,6 @@ def change_address_of_user( user_id : int, new_address : AddressCreateSchema, db
         raise HTTPException(status_code=404, detail="User not found")
 
     phone_number = user.__dict__['phone_number']
-    
-    # Save the old address    
-    old_address = Address.address
-    old_address_type = Address.address_type
-    old_lat = Address.latitude
-    old_lon = Address.longitude
 
     # Update the address
     updat_address = db.query(Address).filter(Address.phone_number == phone_number).first()
