@@ -907,17 +907,20 @@ def change_address_of_user( user_id : int, new_address : AddressCreateSchema, db
 
 #Make an api to change the phone number of user
 @app.put('/update_phone_number/')
-def update_phone_number(user_id : int, phone_number : schema.UpdatePhoneNumberSchema, db: Session = Depends(get_db)):
+def update_phone_number(user_id: int, phone_number_data: schema.UpdatePhoneNumberSchema, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Extract the phone_number value from the schema
+    new_phone_number = phone_number_data.phone_number
+
     # Check if the new phone number is different from the existing one
-    if user.phone_number != phone_number:
-        user.phone_number = phone_number
+    if user.phone_number != new_phone_number:
+        user.phone_number = new_phone_number
         db.commit()
-        return {"message": f"Phone number updated to {phone_number}"}
+        return {"message": f"Phone number updated to {new_phone_number}"}
     else:
         return {"message": "Phone number is already set to the provided value"}
 
@@ -925,6 +928,8 @@ def update_phone_number(user_id : int, phone_number : schema.UpdatePhoneNumberSc
 @app.put('/update_active_status/')
 def update_active_status(user_id : int, activity : schema.UpdateActivityStatus, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
+
+    activity = activity.is_active
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
