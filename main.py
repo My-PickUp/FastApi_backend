@@ -880,3 +880,32 @@ def get_ride_count_status(user_id : str,
         total_count = count
     
     return total_count
+
+@app.put("/change-address-of-user")
+def change_address_of_user( user_id : int, new_address : AddressCreateSchema, db: Session = Depends(get_db)):
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    phone_number = user.__dict__['phone_number']
+    # Check if the user exists
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    phone_number = user.__dict__['phone_number']
+    
+    # Save the old address    
+    old_address = Address.address
+    old_address_type = Address.address_type
+    old_lat = Address.latitude
+    old_lon = Address.longitude
+
+    # Update the address
+    updat_address = db.query(Address).filter(Address.phone_number == phone_number).first()
+    
+    updat_address.address = new_address.address
+    updat_address.address_type = new_address.address_type
+    updat_address.latitude = new_address.latitude
+    updat_address.longitude = new_address.longitude
+
+    db.commit()
+    
+    return {"message" : f"{new_address}"}
