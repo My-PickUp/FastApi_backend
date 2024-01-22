@@ -893,7 +893,7 @@ def change_address_of_user( user_id : int, new_address : AddressCreateSchema, db
     phone_number = user.__dict__['phone_number']
 
     # Update the address
-    updat_address = db.query(Address).filter(Address.phone_number == phone_number).first()
+    updat_address = db.query(Address).filter(Address.phone_number == phone_number).filter(Address.address_type == new_address.address_type).first()
     
     updat_address.address = new_address.address
     updat_address.address_type = new_address.address_type
