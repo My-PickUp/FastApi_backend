@@ -969,3 +969,15 @@ def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchem
     
     return{True}
     
+
+@app.get("/rescheduled-rides", response_model=List[GetRideDetailSchema])
+def get_rescheduled_rides(
+    db: Session = Depends(get_db)
+):
+
+    rescheduled_rides = db.query(RidesDetail).filter(RidesDetail.ride_status == "Rescheduled").all()
+
+    # Convert the rides to the response model
+    rescheduled_rides_schema = [GetRideDetailSchema(**ride.__dict__) for ride in rescheduled_rides]
+
+    return rescheduled_rides_schema
