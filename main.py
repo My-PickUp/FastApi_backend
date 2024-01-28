@@ -737,7 +737,9 @@ async def get_latest_subscription(
         return ride_stats
 
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {str(e)}")
+        print(f"An error occurred: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+
     
 
 @app.put("/updateRideStatus")
