@@ -570,7 +570,7 @@ async def cancel_ride(
     # Mark the ride status as "Cancelled"
     # Make a request to the other endpoint
     cancel_customer_ride_url = 'https://driverappbackend.onrender.com/api/cancelCustomerRide/'
-    data = {"customer_ride_id": ride_id}
+    data = {"customer_ride_ids": [ride_id]}
 
     headers = {
         'Content-Type': 'application/json',
