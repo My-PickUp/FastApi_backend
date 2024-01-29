@@ -712,7 +712,7 @@ async def get_latest_subscription(
     db: Session = Depends(get_db)
 ):
 
-    expire_subscriptions_plan(db)
+    #expire_subscriptions_plan(db)
     
     try:
         # Query the database to get the most recent subscriptions with the specified criteria
