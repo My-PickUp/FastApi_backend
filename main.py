@@ -549,6 +549,7 @@ async def reschedule_ride(
     # Mark the ride status as "Rescheduled"
     ride.ride_status = "Rescheduled"
 
+
     # Append the new reschedule datetime to additional_ride_details
     if not ride.additional_ride_details:
         ride.additional_ride_details = str(reschedule_data.new_datetime)
@@ -696,6 +697,7 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
     # Make an internal request to the specified URL
     ride.ride_date_time = new_datetime
     ride.ride_status = "Upcoming"
+    ride.additional_ride_details = "Approved"
      
     db.commit()
 
