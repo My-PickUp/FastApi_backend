@@ -704,6 +704,29 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
     return {"message": f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"}
 
 
+@app.put("/reject_reschedule_ride/")
+@limiter.limit("50/minute")
+async def reject_reschedule_ride(request: Request, reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
+    """
+    Reschedule the date and time for a specific ride.
+    """
+    ride = db.query(RidesDetail).filter(RidesDetail.id == reschedule_data.ride_id).first()
+    if ride is None:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+
+    '''
+    Reject flow for a reschedule ride.
+    '''
+
+    ride.ride_status = "Upcoming"
+    ride.additional_ride_details = "Reject"
+
+    db.commit()
+
+    return {"message": f"Ride is rejected for Ride ID: {reschedule_data.ride_id}"}
+
+
 
 @app.get("/get-last-subscription-details")
 @limiter.limit("15/minute")
