@@ -17,6 +17,7 @@ from collections import deque
 from sqlalchemy import func
 import models as model
 import schema
+from datetime import datetime, timedelta
 
 
 
@@ -145,6 +146,29 @@ def expire_existing_subscription(user_id: int, subscription_plan: str):
         db.close()
 
 
+def expire_subscriptions_plan(db: Session):
+    try:
+        today = datetime.now().date()
+        last_week_start = today - timedelta(days=(today.isoweekday() + 6) % 7)
+        last_week_end = last_week_start + timedelta(days=6)
+
+        subscriptions_to_expire = (
+            db.query(UsersSubscription)
+            .filter(
+                UsersSubscription.subscription_status == "active",
+                UsersSubscription.created_at <= last_week_end
+            )
+            .all()
+        )
+
+        for subscription in subscriptions_to_expire:
+            subscription.subscription_status = "expired"
+
+        db.commit()
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+    finally:
+        db.close()  
 
 # API Endpoints
 
@@ -687,6 +711,9 @@ async def get_latest_subscription(
     subscription_plan: str,
     db: Session = Depends(get_db)
 ):
+
+    expire_subscriptions_plan()
+    
     try:
         # Query the database to get the most recent subscriptions with the specified criteria
         latest_subscriptions = (
@@ -701,11 +728,11 @@ async def get_latest_subscription(
         )
 
         if not latest_subscriptions:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching subscription found")
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching subscription found")
 
         if len(latest_subscriptions) == 1:
             # Only one subscription, return the message
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Second latest subscription does not exist")
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Second latest subscription does not exist")
 
         second_latest_subscription = latest_subscriptions[1]
 
@@ -716,7 +743,7 @@ async def get_latest_subscription(
         )
 
         if not subscription_rides:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No rides found for the second-latest subscription")
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No rides found for the second-latest subscription")
 
         canceled_rides = 0
         completed_rides = 0
@@ -738,7 +765,7 @@ async def get_latest_subscription(
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
     
 
