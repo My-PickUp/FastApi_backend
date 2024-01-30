@@ -551,9 +551,7 @@ async def reschedule_ride(
 
     # Mark the ride status as "Rescheduled"
     ride.ride_status = "Rescheduled"
-     
-    if response.status_code  != 201:
-        raise HTTPException(status_code=500, detail="Failed to cancel customer ride from driver backend side")
+    
 
     # Append the new reschedule datetime to additional_ride_details
     if not ride.additional_ride_details:
