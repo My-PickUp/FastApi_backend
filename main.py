@@ -904,8 +904,15 @@ def get_payment_status(user_id : str,
             model.UsersSubscription.user_id == user_id).filter(
             model.UsersSubscription.subscription_status == "active").filter(
             model.UsersSubscription.created_at == subquery).scalar()
+
+    subscription_id = db.query(model.UsersSubscription.id).filter(
+            model.UsersSubscription.user_id == user_id).filter(
+            model.UsersSubscription.subscription_status == "active").filter(
+            model.UsersSubscription.created_at == subquery).scalar()
     
-    return payment_status
+    return {"payment_status" : payment_status,
+            "subscription_id" : subscription_id}
+    
 
 @app.get("/Latest_subscription_ride_count/")
 def get_ride_count_status(user_id : str,
