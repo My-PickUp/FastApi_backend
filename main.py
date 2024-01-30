@@ -146,17 +146,20 @@ def expire_existing_subscription(user_id: int, subscription_plan: str):
         db.close()
 
 
-def expire_subscriptions_plan(db: Session):
+def expire_existing_subscriptions(db: Session):
     try:
         today = datetime.now().date()
         last_week_start = today - timedelta(days=(today.isoweekday() + 6) % 7)
-        last_week_end = last_week_start + timedelta(days=6)
+        last_week_end = last_week_start + timedelta(days=5)
+        
+        print(last_week_end)
 
         subscriptions_to_expire = (
             db.query(UsersSubscription)
             .filter(
                 UsersSubscription.subscription_status == "active",
-                UsersSubscription.created_at <= last_week_end
+                UsersSubscription.payment_status == "true",
+                UsersSubscription.created_at < last_week_start
             )
             .all()
         )
@@ -168,7 +171,7 @@ def expire_subscriptions_plan(db: Session):
     except Exception as e:
         print(f"An error occurred: {str(e)}")
     finally:
-        db.close()  
+        db.close()   
 
 # API Endpoints
 
@@ -737,7 +740,7 @@ async def get_latest_subscription(
     db: Session = Depends(get_db)
 ):
 
-    #expire_subscriptions_plan(db)
+    expire_subscriptions_plan(db)
     
     try:
         # Query the database to get the most recent subscriptions with the specified criteria
