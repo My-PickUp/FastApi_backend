@@ -705,19 +705,6 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
     ride.additional_ride_details = "Approved"
 
     ride.ride_status = "Rescheduled"
-
-    reschedule_ride_url = "https://driverappbackend.onrender.com/api/customerRideReschedule/"
-    
-    data = {
-    'customer_ride_id': ride.id,
-    'ride_date_time': new_datetime,
-    }
-    
-    headers = {
-    'Content-Type': 'application/json',
-    }
-    
-    response = requests.post(reschedule_ride_url, headers=headers, json=data)
     
     db.commit()
 
