@@ -551,19 +551,6 @@ async def reschedule_ride(
 
     # Mark the ride status as "Rescheduled"
     ride.ride_status = "Rescheduled"
-
-    reschedule_ride_url = "https://driverappbackend.onrender.com/api/customerRideReschedule/"
-    
-    data = {
-    'customer_ride_id': ride.id,
-    'ride_date_time': reschedule_data.new_datetime,
-    }
-    
-    headers = {
-    'Content-Type': 'application/json',
-    }
-    
-    response = requests.post(reschedule_ride_url, headers=headers, json=data)
      
     if response.status_code  != 201:
         raise HTTPException(status_code=500, detail="Failed to cancel customer ride from driver backend side")
@@ -716,7 +703,22 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
     ride.ride_date_time = new_datetime
     ride.ride_status = "Upcoming"
     ride.additional_ride_details = "Approved"
-     
+
+    ride.ride_status = "Rescheduled"
+
+    reschedule_ride_url = "https://driverappbackend.onrender.com/api/customerRideReschedule/"
+    
+    data = {
+    'customer_ride_id': ride.id,
+    'ride_date_time': new_datetime,
+    }
+    
+    headers = {
+    'Content-Type': 'application/json',
+    }
+    
+    response = requests.post(reschedule_ride_url, headers=headers, json=data)
+    
     db.commit()
 
     return {"message": f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"}
