@@ -556,7 +556,7 @@ async def reschedule_ride(
     
     data = {
     'customer_ride_id': ride.id,
-    'ride_date_time': new_datetime,
+    'ride_date_time': reschedule_data.new_datetime,
     }
     
     headers = {
