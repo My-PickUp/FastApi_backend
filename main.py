@@ -756,12 +756,16 @@ async def get_latest_subscription(
             .all()
         )
 
-        if not latest_subscriptions:
-            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching subscription found")
+        # if not latest_subscriptions:
+        #     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching subscription found")
+        #
+        # if len(latest_subscriptions) == 1:
+        #     # Only one subscription, return the message
+        #     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Second latest subscription does not exist")
 
-        if len(latest_subscriptions) == 1:
-            # Only one subscription, return the message
-            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Second latest subscription does not exist")
+        if len(latest_subscriptions) < 2:
+            # If there are less than 2 subscriptions, return an empty response
+            return {}
 
         second_latest_subscription = latest_subscriptions[1]
 
