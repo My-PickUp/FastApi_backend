@@ -765,7 +765,7 @@ async def get_latest_subscription(
 
         if len(latest_subscriptions) < 2:
             # If there are less than 2 subscriptions, return an empty response
-            return {}
+            return None
 
         second_latest_subscription = latest_subscriptions[1]
 
