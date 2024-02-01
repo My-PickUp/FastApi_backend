@@ -700,8 +700,6 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
     ride.ride_date_time = new_datetime
     ride.ride_status = "Upcoming"
     ride.additional_ride_details = "Approved"
-
-    ride.ride_status = "Rescheduled"
     
     db.commit()
 
