@@ -699,8 +699,31 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
     # Make an internal request to the specified URL
     ride.ride_date_time = new_datetime
     ride.ride_status = "Upcoming"
-    ride.additional_ride_details = "Approved"
     
+    db.commit()
+
+    return {"message": f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"}
+
+
+@app.put("/approve_reschedule_ride/")
+@limiter.limit("50/minute")
+async def approve_reschedule_ride(request: Request, reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
+    """
+    Reschedule the date and time for a specific ride.
+    """
+    ride = db.query(RidesDetail).filter(RidesDetail.id == reschedule_data.ride_id).first()
+    if ride is None:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    new_datetime = reschedule_data.new_datetime
+
+    '''
+    Make an internal request to the specified URL.
+    '''
+    ride.ride_date_time = new_datetime
+    ride.ride_status = "Upcoming"
+    ride.additional_ride_details = "Approved"
+
     db.commit()
 
     return {"message": f"Ride Datetime updated successfully for Ride ID: {reschedule_data.ride_id} to {new_datetime}"}
