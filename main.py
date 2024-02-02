@@ -762,14 +762,16 @@ async def get_latest_subscription(
         #     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Second latest subscription does not exist")
 
         if len(latest_subscriptions) < 2:
-            # If there are less than 2 subscriptions, return an empty response
+            '''
+            If there are less than 2 subscriptions, return an empty response.
+            '''
             return None
 
         second_latest_subscription = latest_subscriptions[1]
 
         subscription_rides = (
             db.query(RidesDetail)
-            .filter(RidesDetail.subscription_id == second_latest_subscription.id)
+            .filter(RidesDetail.subscription_id == second_latest_subscription.id, model.RidesDetail.driver_phone.isnot(None))
             .all()
         )
 
@@ -915,13 +917,13 @@ def get_payment_status(user_id : str,
     
     return {"payment_status" : payment_status,
             "subscription_id" : subscription_id}
-    
+
 
 @app.get("/Latest_subscription_ride_count/")
-def get_ride_count_status(user_id : str,
-                        token: str = Header(..., description="JWT token for authentication"), 
-                       phone_number: str = Header(..., description="User's phone number"),
-                       db: Session = Depends(get_db)):
+def get_ride_count_status(user_id: str,
+                          token: str = Header(..., description="JWT token for authentication"),
+                          phone_number: str = Header(..., description="User's phone number"),
+                          db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -935,18 +937,34 @@ def get_ride_count_status(user_id : str,
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    #count of no of rides in the latest subscription
-    
-    subscription_ids = db.query(model.UsersSubscription.id).filter(
-                        model.UsersSubscription.user_id == user_id).filter(
-                         model.UsersSubscription.subscription_status == "active").all()
-                        
-    total_count = 0
-    
-    for i in subscription_ids:
-        count = db.query(func.count()).filter(model.RidesDetail.subscription_id == i.id).scalar()
-        total_count = count
-    
+    # count of no of rides in the latest subscription
+
+    # subscription_ids = db.query(model.UsersSubscription.id).filter(
+    #                     model.UsersSubscription.user_id == user_id).filter(
+    #                      model.UsersSubscription.subscription_status == "active").all()
+
+    '''
+    Now fetching only those active user's rides where driver_phone is attached.
+    The query also Filter for rides where driver_phone is assigned.
+    '''
+
+    subscription_ids = (
+        db.query(model.UsersSubscription.id)
+        .join(model.RidesDetail, model.UsersSubscription.id == model.RidesDetail.subscription_id)
+        .filter(
+            model.UsersSubscription.user_id == user_id,
+            model.UsersSubscription.subscription_status == "active",
+            model.RidesDetail.driver_phone.isnot(None)
+        )
+        .all()
+    )
+
+    total_count = len(subscription_ids)
+
+    # for i in subscription_ids:
+    #     count = db.query(func.count()).filter(model.RidesDetail.subscription_id == i.id).scalar()
+    #     total_count = count
+
     return total_count
 
 @app.put("/change-address-of-user/")
