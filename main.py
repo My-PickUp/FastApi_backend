@@ -187,8 +187,10 @@ async def generate_otp(request: Request, phone_number: str, background_tasks: Ba
     user = db.query(User).filter(User.phone_number == phone_number).first()
 
     if not user:
+        return {"error": "User not found"}
         # If the user does not exist, create a new user with default values or nullable fields
-        background_tasks.add_task(add_newsuser_to_db, phone_number)
+        #background_tasks.add_task(add_newsuser_to_db, phone_number)
+
 
     # Generate a 6-digit OTP
     if otp_queue:
