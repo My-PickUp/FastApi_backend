@@ -389,10 +389,20 @@ async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/create-address")
 def create_address(
-    phone_number:str,
+    phone_number: str,
     address_data: AddressCreateSchema,
     db: Session = Depends(get_db)
 ):
+    # Check if the address already exists in the database
+    existing_address = db.query(Address).filter(
+        Address.phone_number == phone_number,
+        Address.address_type == address_data.address_type
+    ).first()
+
+    if existing_address:
+        return {
+            "error": f"Address with type {address_data.address_type} already exists for phone number {phone_number}"}
+
     # Create address in the database
     address = Address(
         phone_number=phone_number,
