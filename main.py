@@ -162,11 +162,10 @@ def expire_existing_subscriptions(db: Session):
             )
             .all()
         )
-        if subscriptions_to_expire:
-            for subscription in subscriptions_to_expire:
-                subscription.subscription_status = "expired"
+        for subscription in subscriptions_to_expire:
+            subscription.subscription_status = "expired"
 
-            db.commit()
+        db.commit()
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
