@@ -1026,7 +1026,8 @@ def get_ride_count_status(user_id: str,
         .join(model.RidesDetail, model.UsersSubscription.id == model.RidesDetail.subscription_id)
         .filter(
             model.UsersSubscription.user_id == user_id,
-            model.UsersSubscription.subscription_status == "active"
+            model.UsersSubscription.subscription_status == "active",
+            model.UsersSubscription.payment_status == "false"
         )
         .all()
     )
