@@ -1019,33 +1019,44 @@ def get_ride_count_status(user_id: str,
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    # count of no of rides in the latest subscription
-
-    # subscription_ids = db.query(model.UsersSubscription.id).filter(
-    #                     model.UsersSubscription.user_id == user_id).filter(
-    #                      model.UsersSubscription.subscription_status == "active").all()
-
-    '''
-    Now fetching only those active user's rides where driver_phone is attached.
-    The query also Filter for rides where driver_phone is assigned.
-    '''
+       # count of no of rides in the latest subscription
 
     subscription_ids = (
         db.query(model.UsersSubscription.id)
         .join(model.RidesDetail, model.UsersSubscription.id == model.RidesDetail.subscription_id)
         .filter(
             model.UsersSubscription.user_id == user_id,
-            model.UsersSubscription.subscription_status == "active",
-            model.RidesDetail.driver_phone.isnot(None)
+            model.UsersSubscription.subscription_status == "active"
         )
         .all()
     )
 
-    total_count = len(subscription_ids)
+    '''
+    Now fetching only those active user's rides where driver_phone is attached.
+    The query also Filter for rides where driver_phone is assigned.
+    '''
 
-    # for i in subscription_ids:
-    #     count = db.query(func.count()).filter(model.RidesDetail.subscription_id == i.id).scalar()
-    #     total_count = count
+    # subscription_ids = (
+    #     db.query(model.UsersSubscription.id)
+    #     .join(model.RidesDetail, model.UsersSubscription.id == model.RidesDetail.subscription_id)
+    #     .filter(
+    #         model.UsersSubscription.user_id == user_id,
+    #         model.UsersSubscription.subscription_status == "active",
+    #         model.RidesDetail.driver_phone.isnot(None)
+    #     )
+    #     .all()
+    # )
+
+    # total_count = len(subscription_ids)
+
+    total_count = 0
+
+    for i in subscription_ids:
+        count = (db.query(func.count())
+                .filter(model.RidesDetail.subscription_id == i.id)
+                .filter(model.RidesDetail.driver_phone.isnot(None))
+                .scalar())
+        total_count = count
 
     return total_count
 
