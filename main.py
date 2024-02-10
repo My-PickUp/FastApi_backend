@@ -190,6 +190,7 @@ def expire_existing_subscriptions(db: Session):
             db.query(UsersSubscription)
             .filter(
                 UsersSubscription.subscription_status == "active",
+                UsersSubscription.payment_status == "true",
                 UsersSubscription.created_at >= previous_week_start,
                 UsersSubscription.created_at <= previous_week_end,
                 UsersSubscription.id.notin_(
