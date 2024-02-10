@@ -146,22 +146,65 @@ def expire_existing_subscription(user_id: int, subscription_plan: str):
 
 
 def expire_existing_subscriptions(db: Session):
+    # try:
+    #     today = datetime.now().date()
+    #     last_week_start = today - timedelta(days=(today.isoweekday() + 6) % 7)
+    #     last_week_end = last_week_start + timedelta(days=5)
+    #
+    #     print(last_week_end)
+    #
+    #     subscriptions_to_expire = (
+    #         db.query(UsersSubscription)
+    #         .filter(
+    #             UsersSubscription.subscription_status == "active",
+    #             UsersSubscription.payment_status == "true",
+    #             UsersSubscription.created_at < last_week_start
+    #         )
+    #         .all()
+    #     )
+    #     for subscription in subscriptions_to_expire:
+    #         subscription.subscription_status = "expired"
+    #
+    #     db.commit()
+    #
+    # except Exception as e:
+    #     print(f"An error occurred: {str(e)}")
+    # finally:
+    #     db.close()
+
     try:
+        '''
+        Calculate the start and end dates of the previous week (n - 1 week).
+        '''
         today = datetime.now().date()
-        last_week_start = today - timedelta(days=(today.isoweekday() + 6) % 7)
-        last_week_end = last_week_start + timedelta(days=5)
-        
-        print(last_week_end)
+        previous_week_start = today - timedelta(days=today.weekday() + 7)
+        previous_week_end = previous_week_start + timedelta(days=6)
+
+        '''
+        Calculate the start and end dates of the upcoming week (n week).
+        '''
+        next_week_start = today + timedelta(days=(7 - today.weekday()))
+        next_week_end = next_week_start + timedelta(days=6)
 
         subscriptions_to_expire = (
             db.query(UsersSubscription)
             .filter(
                 UsersSubscription.subscription_status == "active",
-                UsersSubscription.payment_status == "true",
-                UsersSubscription.created_at < last_week_start
+                UsersSubscription.created_at >= previous_week_start,
+                UsersSubscription.created_at <= previous_week_end,
+                UsersSubscription.id.notin_(
+                    db.query(GetRideDetailSchema.subscription_id)
+                    .filter(
+                        GetRideDetailSchema.ride_date_time >= next_week_start,
+                        GetRideDetailSchema.ride_date_time <= next_week_end
+                    )
+                    .distinct()
+                ),
+                today.weekday() == 0 and today == next_week_start
             )
             .all()
         )
+
         for subscription in subscriptions_to_expire:
             subscription.subscription_status = "expired"
 
@@ -170,7 +213,7 @@ def expire_existing_subscriptions(db: Session):
     except Exception as e:
         print(f"An error occurred: {str(e)}")
     finally:
-        db.close()   
+        db.close()
 
 # API Endpoints
 
