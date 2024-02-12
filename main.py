@@ -186,25 +186,27 @@ def expire_existing_subscriptions(db: Session):
         next_week_start = today + timedelta(days=(7 - today.weekday()))
         next_week_end = next_week_start + timedelta(days=6)
 
-        subscriptions_to_expire = (
-            db.query(UsersSubscription)
-            .filter(
-                UsersSubscription.subscription_status == "active",
-                UsersSubscription.payment_status == "true",
-                UsersSubscription.created_at >= previous_week_start,
-                UsersSubscription.created_at <= previous_week_end,
-                UsersSubscription.id.notin_(
-                    db.query(GetRideDetailSchema.subscription_id)
-                    .filter(
-                        GetRideDetailSchema.ride_date_time >= next_week_start,
-                        GetRideDetailSchema.ride_date_time <= next_week_end
-                    )
-                    .distinct()
-                ),
-                today.weekday() == 0 and today == next_week_start
+        if today.weekday() == 0:
+            subscriptions_to_expire = (
+                db.query(UsersSubscription)
+                .filter(
+                    UsersSubscription.subscription_status == "active",
+                    UsersSubscription.payment_status == "true",
+                    UsersSubscription.created_at >= previous_week_start,
+                    UsersSubscription.created_at <= previous_week_end,
+                    UsersSubscription.id.notin_(
+                        db.query(GetRideDetailSchema.subscription_id)
+                        .filter(
+                            GetRideDetailSchema.ride_date_time >= next_week_start,
+                            GetRideDetailSchema.ride_date_time <= next_week_end
+                        )
+                        .distinct()
+                    ),
+                )
+                .all()
             )
-            .all()
-        )
+
+
 
         for subscription in subscriptions_to_expire:
             subscription.subscription_status = "expired"
