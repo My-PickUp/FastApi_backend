@@ -185,8 +185,8 @@ def expire_existing_subscriptions(db: Session):
         '''
         Calculate the start and end dates of the upcoming week (n week).
         '''
-        current_week_start = today - timedelta(days=today.weekday())
-        current_week_end = current_week_start + timedelta(days=6)
+        next_week_start = today + timedelta(days=(7 - today.weekday()))
+        next_week_end = next_week_start + timedelta(days=6)
 
         subscriptions_to_expire = (
             db.query(UsersSubscription)
@@ -195,14 +195,15 @@ def expire_existing_subscriptions(db: Session):
                 UsersSubscription.payment_status == "true",
                 UsersSubscription.created_at >= previous_week_start,
                 UsersSubscription.created_at <= previous_week_end,
-                ~exists()
-                .where(
-                    and_(
-                        GetRideDetailSchema.subscription_id == UsersSubscription.id,
-                        GetRideDetailSchema.ride_date_time >= current_week_start,
-                        GetRideDetailSchema.ride_date_time <= current_week_end
+                UsersSubscription.id.notin_(
+                    db.query(GetRideDetailSchema.subscription_id)
+                    .filter(
+                        GetRideDetailSchema.ride_date_time >= next_week_start,
+                        GetRideDetailSchema.ride_date_time <= next_week_end
                     )
-                )
+                    .distinct()
+                ),
+                today.weekday() == 0
             )
             .all()
         )
