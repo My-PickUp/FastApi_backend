@@ -1170,3 +1170,63 @@ def get_rescheduled_rides(
     rescheduled_rides_schema = [GetRideDetailSchema(**ride.__dict__) for ride in rescheduled_rides]
 
     return rescheduled_rides_schema
+@app.get("/getRidesCountByUser/{user_id}")
+
+def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
+
+    user_exists = db.query(exists().where(RidesDetail.user_id == user_id)).scalar()
+    if not user_exists:
+        raise HTTPException(status_code=404, detail="Invalid user_id or user does not exist")
+
+    '''
+    Calculate the start_of_prev_prev_week
+    '''
+    start_of_prev_prev_week = datetime.now() - timedelta(days=datetime.now().weekday() + 14)
+
+    '''
+    Calculate the end_of_prev_prev_week
+    '''
+    end_of_prev_prev_week = start_of_prev_prev_week + timedelta(days=6)
+
+    '''
+    Query the database to get the count of cancelled rides for the specified user in the prev_prev week
+    '''
+
+    cancelled_rides_count = db.query(func.count(RidesDetail.id)).filter(
+        RidesDetail.user_id == user_id,
+        RidesDetail.ride_status == "Cancelled",
+        RidesDetail.ride_date_time >= start_of_prev_prev_week,
+        RidesDetail.ride_date_time <= end_of_prev_prev_week
+    ).scalar()
+
+    '''
+    Query the database to get the count of completed rides for the specified user in the prev_prev week
+    '''
+
+    completed_rides_count = db.query(func.count(RidesDetail.id)).filter(
+        RidesDetail.user_id == user_id,
+        RidesDetail.ride_status == "Completed",
+        RidesDetail.ride_date_time >= start_of_prev_prev_week,
+        RidesDetail.ride_date_time <= end_of_prev_prev_week
+    ).scalar()
+
+    '''
+    Query the database to get the count of total rides for the specified user in the prev_prev week
+    '''
+
+    total_rides_count = completed_rides_count + cancelled_rides_count
+
+    '''
+    Returning a Json response.
+    '''
+
+    return {
+        "cancelled_rides_count": cancelled_rides_count,
+        "completed_rides_count": completed_rides_count,
+        "total_rides_count": total_rides_count
+    }
+
+
+
+
+
