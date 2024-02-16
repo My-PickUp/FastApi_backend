@@ -1181,7 +1181,7 @@ def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
     '''
     Calculate the start_of_prev_prev_week
     '''
-    start_of_prev_prev_week = datetime.now() - timedelta(days=datetime.now().weekday() + 14)
+    start_of_prev_prev_week = datetime.now() - timedelta(days=datetime.now().weekday() + 7)
 
     '''
     Calculate the end_of_prev_prev_week
