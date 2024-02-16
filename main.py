@@ -1,6 +1,7 @@
 import string, requests
 import random
 from sqlalchemy import exists, and_
+import pytz
 
 from typing import List
 from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, BackgroundTasks
@@ -1170,28 +1171,24 @@ def get_rescheduled_rides(
     rescheduled_rides_schema = [GetRideDetailSchema(**ride.__dict__) for ride in rescheduled_rides]
 
     return rescheduled_rides_schema
+
+
 @app.get("/getRidesCountByUser/{user_id}")
-
-def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
-
+def get_rides_count_by_user(user_id: int, db: Session = Depends(get_db)):
     user_exists = db.query(exists().where(RidesDetail.user_id == user_id)).scalar()
     if not user_exists:
         raise HTTPException(status_code=404, detail="Invalid user_id or user does not exist")
 
-    '''
-    Calculate the start_of_prev_prev_week
-    '''
-    start_of_prev_week = datetime.now() - timedelta(days=datetime.now().weekday() + 7)
+    # Get the current date and time in IST
+    now_ist = datetime.now(pytz.timezone('Asia/Kolkata'))
 
-    '''
-    Calculate the end_of_prev_prev_week
-    '''
+    # Calculate the start of the previous week
+    start_of_prev_week = now_ist - timedelta(days=now_ist.weekday() + 7)
+
+    # Calculate the end of the previous week
     end_of_prev_week = start_of_prev_week + timedelta(days=6)
 
-    '''
-    Query the database to get the count of cancelled rides for the specified user in the prev_prev week
-    '''
-
+    # Query the database to get the count of cancelled rides for the specified user in the previous week
     cancelled_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
         RidesDetail.ride_status == "Cancelled",
@@ -1199,12 +1196,7 @@ def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
         RidesDetail.ride_date_time <= end_of_prev_week
     ).scalar()
 
-    print(cancelled_rides_count)
-
-    '''
-    Query the database to get the count of completed rides for the specified user in the prev_prev week
-    '''
-
+    # Query the database to get the count of completed rides for the specified user in the previous week
     completed_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
         RidesDetail.ride_status == "Completed",
@@ -1212,16 +1204,10 @@ def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
         RidesDetail.ride_date_time <= end_of_prev_week
     ).scalar()
 
-    '''
-    Query the database to get the count of total rides for the specified user in the prev_prev week
-    '''
-
+    # Calculate the total rides count
     total_rides_count = completed_rides_count + cancelled_rides_count
 
-    '''
-    Returning a Json response.
-    '''
-
+    # Return a JSON response
     return {
         "cancelled_rides_count": cancelled_rides_count,
         "completed_rides_count": completed_rides_count,
