@@ -1184,9 +1184,12 @@ def get_rides_count_by_user(user_id: int, db: Session = Depends(get_db)):
 
     # Calculate the start of the previous week
     start_of_prev_week = now_ist - timedelta(days=now_ist.weekday() + 7)
+    start_of_prev_week = start_of_prev_week.replace(hour=0, minute=1, second=0)
+    # print(start_of_prev_week)
 
-    # Calculate the end of the previous week
     end_of_prev_week = start_of_prev_week + timedelta(days=6)
+    end_of_prev_week = end_of_prev_week.replace(hour=23, minute=0, second=0)
+    # print(end_of_prev_week)
 
     # Query the database to get the count of cancelled rides for the specified user in the previous week
     cancelled_rides_count = db.query(func.count(RidesDetail.id)).filter(
