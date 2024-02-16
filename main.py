@@ -1181,12 +1181,12 @@ def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
     '''
     Calculate the start_of_prev_prev_week
     '''
-    start_of_prev_prev_week = datetime.now() - timedelta(days=datetime.now().weekday() + 7)
+    start_of_prev_week = datetime.now() - timedelta(days=datetime.now().weekday() + 7)
 
     '''
     Calculate the end_of_prev_prev_week
     '''
-    end_of_prev_prev_week = start_of_prev_prev_week + timedelta(days=6)
+    end_of_prev_week = start_of_prev_week + timedelta(days=6)
 
     '''
     Query the database to get the count of cancelled rides for the specified user in the prev_prev week
@@ -1195,9 +1195,11 @@ def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
     cancelled_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
         RidesDetail.ride_status == "Cancelled",
-        RidesDetail.ride_date_time >= start_of_prev_prev_week,
-        RidesDetail.ride_date_time <= end_of_prev_prev_week
+        RidesDetail.ride_date_time >= start_of_prev_week,
+        RidesDetail.ride_date_time <= end_of_prev_week
     ).scalar()
+
+    print(cancelled_rides_count)
 
     '''
     Query the database to get the count of completed rides for the specified user in the prev_prev week
@@ -1206,8 +1208,8 @@ def get_rides_count_by_user(user_id : int, db: Session = Depends(get_db)):
     completed_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
         RidesDetail.ride_status == "Completed",
-        RidesDetail.ride_date_time >= start_of_prev_prev_week,
-        RidesDetail.ride_date_time <= end_of_prev_prev_week
+        RidesDetail.ride_date_time >= start_of_prev_week,
+        RidesDetail.ride_date_time <= end_of_prev_week
     ).scalar()
 
     '''
