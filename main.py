@@ -1179,38 +1179,60 @@ def get_rides_count_by_user(user_id: int, db: Session = Depends(get_db)):
     if not user_exists:
         raise HTTPException(status_code=404, detail="Invalid user_id or user does not exist")
 
-    # Get the current date and time in IST
     now_ist = datetime.now(pytz.timezone('Asia/Kolkata'))
-
-    # Calculate the start of the previous week
     start_of_prev_week = now_ist - timedelta(days=now_ist.weekday() + 7)
-    start_of_prev_week = start_of_prev_week.replace(hour=0, minute=1, second=0)
-    # print(start_of_prev_week)
+    start_of_prev_week, end_of_prev_week = set_start_end_times(start_of_prev_week)
+    start_of_prev_prev_week = now_ist - timedelta(days=now_ist.weekday() + 14)
+    start_of_prev_prev_week, end_of_prev_prev_week = set_start_end_times(start_of_prev_prev_week)
+    start_of_current_week = now_ist - timedelta(days=now_ist.weekday())
+    start_of_current_week, end_of_current_week = set_start_end_times(start_of_current_week)
 
-    end_of_prev_week = start_of_prev_week + timedelta(days=6)
-    end_of_prev_week = end_of_prev_week.replace(hour=23, minute=0, second=0)
-    # print(end_of_prev_week)
+    previousWeekPaidSubscribedCustomers = is_customer_subscribed(db, user_id, start_of_prev_week, end_of_prev_week, 'true')
+    previousWeekNotPaidSubscribedCustomers = is_customer_subscribed(db, user_id, start_of_prev_week, end_of_prev_week, 'false')
+    currentWeekNotPaidSubscribedCustomers = is_customer_subscribed(db, user_id, start_of_current_week, end_of_current_week, 'false')
 
-    # Query the database to get the count of cancelled rides for the specified user in the previous week
+    if previousWeekPaidSubscribedCustomers:
+        return get_rides_info(db, user_id, start_of_prev_week, end_of_prev_week)
+
+    if previousWeekNotPaidSubscribedCustomers:
+        return get_rides_info(db, user_id, start_of_prev_prev_week, end_of_prev_prev_week)
+
+    if currentWeekNotPaidSubscribedCustomers:
+        return get_rides_info(db, user_id, start_of_prev_week, end_of_prev_week)
+
+    return {"message": "No data found for the user in the specified weeks"}
+
+def set_start_end_times(start_time):
+    start_time = start_time.replace(hour=0, minute=1, second=0)
+    end_time = start_time + timedelta(days=6)
+    end_time = end_time.replace(hour=23, minute=0, second=0)
+    return start_time, end_time
+
+def is_customer_subscribed(db, user_id, start_time, end_time, status):
+    return db.query(UsersSubscription).filter(
+        UsersSubscription.user_id == user_id,
+        UsersSubscription.payment_status == status,
+        UsersSubscription.created_at >= start_time,
+        UsersSubscription.created_at <= end_time
+    ).first() is not None
+
+def get_rides_info(db, user_id, start_time, end_time):
     cancelled_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
         RidesDetail.ride_status == "Cancelled",
-        RidesDetail.ride_date_time >= start_of_prev_week,
-        RidesDetail.ride_date_time <= end_of_prev_week
+        RidesDetail.ride_date_time >= start_time,
+        RidesDetail.ride_date_time <= end_time
     ).scalar()
 
-    # Query the database to get the count of completed rides for the specified user in the previous week
     completed_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
         RidesDetail.ride_status == "Completed",
-        RidesDetail.ride_date_time >= start_of_prev_week,
-        RidesDetail.ride_date_time <= end_of_prev_week
+        RidesDetail.ride_date_time >= start_time,
+        RidesDetail.ride_date_time <= end_time
     ).scalar()
 
-    # Calculate the total rides count
     total_rides_count = completed_rides_count + cancelled_rides_count
 
-    # Return a JSON response
     return {
         "cancelled_rides_count": cancelled_rides_count,
         "completed_rides_count": completed_rides_count,
