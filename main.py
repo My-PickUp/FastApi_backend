@@ -1182,7 +1182,7 @@ def get_rides_count_by_user(user_id: int, db: Session = Depends(get_db)):
     now_ist = datetime.now(pytz.timezone('Asia/Kolkata'))
     start_of_prev_week = now_ist - timedelta(days=now_ist.weekday() + 7)
     start_of_prev_week, end_of_prev_week = set_start_end_times(start_of_prev_week)
-    start_of_prev_prev_week = now_ist - timedelta(days=now_ist.weekday() + 14)
+    start_of_prev_prev_week = now_ist - timedelta(days=now_ist.weekday() + 7)
     start_of_prev_prev_week, end_of_prev_prev_week = set_start_end_times(start_of_prev_prev_week)
     start_of_current_week = now_ist - timedelta(days=now_ist.weekday())
     start_of_current_week, end_of_current_week = set_start_end_times(start_of_current_week)
