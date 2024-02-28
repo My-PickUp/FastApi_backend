@@ -751,7 +751,7 @@ def edit_ride_driver_phone(ride_id: int, driver_phone: str, db: Session = Depend
 
 
 @app.put("/reschedule_ride/")
-@limiter.limit("50/minute")
+# @limiter.limit("50/minute")
 async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
     """
     Reschedule the date and time for a specific ride.
@@ -772,7 +772,7 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
 
 
 @app.put("/approve_reschedule_ride/")
-@limiter.limit("50/minute")
+# @limiter.limit("50/minute")
 async def approve_reschedule_ride(request: Request, reschedule_data: RescheduleRideSchema, db: Session = Depends(get_db)):
     """
     Reschedule the date and time for a specific ride.
