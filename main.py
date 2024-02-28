@@ -759,6 +759,7 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
     ride = db.query(RidesDetail).filter(RidesDetail.id == reschedule_data.ride_id).first()
     if ride is None:
         raise HTTPException(status_code=404, detail="Ride not found")
+
     
     new_datetime = reschedule_data.new_datetime
     
