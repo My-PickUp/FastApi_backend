@@ -761,6 +761,7 @@ async def reschedule_ride(request: Request, reschedule_data: RescheduleRideSchem
         raise HTTPException(status_code=404, detail="Ride not found")
     
     new_datetime = reschedule_data.new_datetime
+
     
     # Make an internal request to the specified URL
     ride.ride_date_time = new_datetime
