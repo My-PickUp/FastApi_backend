@@ -237,6 +237,7 @@ async def generate_otp(request: Request, phone_number: str, background_tasks: Ba
 
     user = db.query(User).filter(User.phone_number == phone_number).first()
 
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -244,7 +245,11 @@ async def generate_otp(request: Request, phone_number: str, background_tasks: Ba
         )
         # If the user does not exist, create a new user with default values or nullable fields
         #background_tasks.add_task(add_newsuser_to_db, phone_number)
-
+    if not user.active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
 
     # Generate a 6-digit OTP
     if otp_queue:
