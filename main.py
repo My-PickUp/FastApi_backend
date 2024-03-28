@@ -675,10 +675,13 @@ async def cancel_ride(
         'Authorization': f'Bearer {token}'  # Assuming your token is used for authentication
     }
 
+    print("Request Body:", data)
+
     response = requests.post(cancel_customer_ride_url, json=data, headers=headers)
 
     # Check the response status code
     if response.status_code != 200:
+        print("Response logs:", response.text)
         raise HTTPException(status_code=500, detail="Failed to cancel customer ride from driver backend side")
 
     ride.ride_status = "Cancelled"
