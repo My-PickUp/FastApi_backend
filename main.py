@@ -667,22 +667,22 @@ async def cancel_ride(
 
     # Mark the ride status as "Cancelled"
     # Make a request to the other endpoint
-    cancel_customer_ride_url = 'https://driverappbackend.onrender.com/api/cancelCustomerRide/'
-    # cancel_customer_ride_url = 'http://127.0.0.1:8000/api/cancelCustomerRide/'
-    data = {"customer_ride_id": ride_id}
-    print(data)
-
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {token}'  # Assuming your token is used for authentication
-    }
-
-    response = requests.post(cancel_customer_ride_url, json=data, headers=headers)
-
-    # Check the response status code
-    if response.status_code != 200:
-
-        raise HTTPException(status_code=500, detail="Failed to cancel customer ride from driver backend side")
+    # cancel_customer_ride_url = 'https://driverappbackend.onrender.com/api/cancelCustomerRide/'
+    # # cancel_customer_ride_url = 'http://127.0.0.1:8000/api/cancelCustomerRide/'
+    # data = {"customer_ride_id": ride_id}
+    # print(data)
+    #
+    # headers = {
+    #     'Content-Type': 'application/json',
+    #     'Authorization': f'Bearer {token}'  # Assuming your token is used for authentication
+    # }
+    #
+    # response = requests.post(cancel_customer_ride_url, json=data, headers=headers)
+    #
+    # # Check the response status code
+    # if response.status_code != 200:
+    #
+    #     raise HTTPException(status_code=500, detail="Failed to cancel customer ride from driver backend side")
 
     ride.ride_status = "Cancelled"
 
