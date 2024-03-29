@@ -685,7 +685,7 @@ async def cancel_ride(
     #
     #     raise HTTPException(status_code=500, detail="Failed to cancel customer ride from driver backend side")
     update_query = text(
-        "UPDATE driverService_customer SET customer_ride_status = 'Upcoming' WHERE customer_ride_id = :ride_id")
+        "UPDATE driverService_customer SET customer_ride_status = 'Cancelled' WHERE customer_ride_id = :ride_id")
     db.execute(update_query, {"ride_id": ride_id})
 
     ride.ride_status = "Cancelled"
