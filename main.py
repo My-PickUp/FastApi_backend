@@ -668,7 +668,9 @@ async def cancel_ride(
     # Mark the ride status as "Cancelled"
     # Make a request to the other endpoint
     cancel_customer_ride_url = 'https://driverappbackend.onrender.com/api/cancelCustomerRide/'
-    data = {"customer_ride_ids": [ride_id]}
+    # cancel_customer_ride_url = 'http://127.0.0.1:8000/api/cancelCustomerRide/'
+    data = {"customer_ride_id": ride_id}
+    print(data)
 
     headers = {
         'Content-Type': 'application/json',
@@ -688,7 +690,6 @@ async def cancel_ride(
     db.refresh(ride)
 
     return f"Ride with Ride ID {ride_id} Cancelled"
-
 
 
 # Api for Admin Dashboard
