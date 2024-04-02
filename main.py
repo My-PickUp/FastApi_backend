@@ -1196,9 +1196,18 @@ def get_rides_count_by_user(user_id: int, db: Session = Depends(get_db)):
     start_of_current_week = now_ist - timedelta(days=now_ist.weekday())
     start_of_current_week, end_of_current_week = set_start_end_times(start_of_current_week)
 
+    findSecondLastCreatedAt = find_second_last_created_at(db, user_id)
+    previousWeekCustomerNotSubscribed = is_customer_not_subscribed(db, user_id, start_of_current_week,
+                                                                   end_of_current_week, None)
+
+    if previousWeekCustomerNotSubscribed:
+        return get_rides_info_from_last_created_at(db, user_id, findSecondLastCreatedAt)
+
+
     previousWeekPaidSubscribedCustomers = is_customer_subscribed(db, user_id, start_of_prev_week, end_of_prev_week, 'true')
     previousWeekNotPaidSubscribedCustomers = is_customer_subscribed(db, user_id, start_of_prev_week, end_of_prev_week, 'false')
     currentWeekNotPaidSubscribedCustomers = is_customer_subscribed(db, user_id, start_of_current_week, end_of_current_week, 'false')
+
 
     if previousWeekPaidSubscribedCustomers:
         return get_rides_info(db, user_id, start_of_prev_week, end_of_prev_week)
@@ -1210,6 +1219,21 @@ def get_rides_count_by_user(user_id: int, db: Session = Depends(get_db)):
         return get_rides_info(db, user_id, start_of_prev_week, end_of_prev_week)
 
     return {"message": "No data found for the user in the specified weeks"}
+
+def find_second_last_created_at(db, user_id):
+
+    max_created_at_subquery = db.query(func.max(UsersSubscription.created_at)).filter(
+        UsersSubscription.user_id == user_id
+    ).scalar_subquery()
+
+    # Query to find the second maximum created_at
+    second_max_created_at = db.query(func.max(UsersSubscription.created_at)).filter(
+        UsersSubscription.user_id == user_id,
+        UsersSubscription.created_at < max_created_at_subquery
+    ).scalar()
+
+    return second_max_created_at
+
 
 def set_start_end_times(start_time):
     start_time = start_time.replace(hour=0, minute=1, second=0)
@@ -1225,6 +1249,21 @@ def is_customer_subscribed(db, user_id, start_time, end_time, status):
         UsersSubscription.created_at <= end_time
     ).first() is not None
 
+def is_customer_not_subscribed(db, user_id, start_time, end_time, status):
+    return db.query(UsersSubscription).filter(
+        UsersSubscription.user_id == user_id,
+        UsersSubscription.payment_status == status,
+        UsersSubscription.created_at >= start_time,
+        UsersSubscription.created_at <= end_time
+    ).first() is None
+
+def get_rides_info_from_last_created_at(db, user_id, last_created_at):
+    start_time = last_created_at
+    print(start_time)
+    end_time = datetime.now(pytz.timezone('Asia/Kolkata'))
+    print(end_time)
+    return get_rides_info(db, user_id, start_time, end_time)
+
 def get_rides_info(db, user_id, start_time, end_time):
     cancelled_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
@@ -1232,6 +1271,8 @@ def get_rides_info(db, user_id, start_time, end_time):
         RidesDetail.ride_date_time >= start_time,
         RidesDetail.ride_date_time <= end_time
     ).scalar()
+
+
 
     completed_rides_count = db.query(func.count(RidesDetail.id)).filter(
         RidesDetail.user_id == user_id,
@@ -1247,6 +1288,8 @@ def get_rides_info(db, user_id, start_time, end_time):
         "completed_rides_count": completed_rides_count,
         "total_rides_count": total_rides_count
     }
+
+
 
 
 
