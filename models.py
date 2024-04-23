@@ -58,7 +58,7 @@ class RidesDetail(Base):
     ride_date_time = Column(DateTime, default=datetime.utcnow)
     ride_status = Column(String, default="Upcoming")
     additional_ride_details = Column(String)
-    assigned_to_cab_fleet = Column(Boolean, default=False)
+    assigned_to_cab_fleet = Column(String)
 
     user = relationship("User", back_populates="rides")
     subscription = relationship("UsersSubscription", back_populates="rides")

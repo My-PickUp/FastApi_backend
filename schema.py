@@ -89,7 +89,7 @@ class GetRideDetailSchema(BaseModel):
     ride_date_time: Optional[datetime] = None
     ride_status: Optional[str] = None
     additional_ride_details: Optional[str] = None
-    assigned_to_cab_fleet: Optional[bool] = False
+    assigned_to_cab_fleet: Optional[str] = None
 
 class RescheduleRideSchema(BaseModel):
     ride_id: int
