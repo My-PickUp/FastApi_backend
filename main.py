@@ -1300,7 +1300,7 @@ def assign_rides_to_cab_fleet(ride_ids: List[int], db: Session = Depends(get_db)
             raise HTTPException(status_code=404, detail=f"Ride with ID {ride_id} not found or not in 'Upcoming' status")
 
     db.commit()
-    return {"message": "Tags successfully attached to rides"}
+    return {"message": f"Tags successfully attached to rides {ride_ids}"}
 
 
 
