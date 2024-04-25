@@ -1290,17 +1290,30 @@ def get_rides_info(db, user_id, start_time, end_time):
     }
 @app.post("/assignRidesToCabFleet")
 def assign_rides_to_cab_fleet(ride_ids: List[int], db: Session = Depends(get_db)):
-    for ride_id in ride_ids:
+    try:
+        for ride_id in ride_ids:
 
-        ride = db.query(RidesDetail).filter(RidesDetail.id == ride_id).first()
+            ride = db.query(RidesDetail).filter(RidesDetail.id == ride_id).first()
 
-        if ride and ride.ride_status == "Upcoming":
-            ride.additional_ride_details = "cab_assigned"
+            if ride and ride.ride_status == "Upcoming":
+                ride.additional_ride_details = "cab_assigned"
+                response = requests.post('https://driverappbackend.onrender.com/api/triggerRideCategory/',
+                                         json={"customer_cab_ride_id": ride_id})
+                response.raise_for_status()
+            else:
+                raise HTTPException(status_code=404,
+                                    detail=f"Ride with ID {ride_id} not found or not in 'Upcoming' status")
+
+        db.commit()
+
+        return {"message": f"Tags successfully attached to rides {ride_ids}"}
+
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 400:
+            return {"error": "Bad request: Invalid data sent to driver app API"}
         else:
-            raise HTTPException(status_code=404, detail=f"Ride with ID {ride_id} not found or not in 'Upcoming' status")
-
-    db.commit()
-    return {"message": f"Tags successfully attached to rides {ride_ids}"}
+            return {"error": f"HTTPError: {e.response.status_code} - {e.response.reason}"}
 
 
 
