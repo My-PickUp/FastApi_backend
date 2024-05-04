@@ -624,7 +624,7 @@ async def reschedule_ride(
     ride.ride_status = "Rescheduled"
     ride.additional_ride_details = str(reschedule_data.new_datetime)
 
-    # # # Append the new reschedule datetime to additional_ride_details
+    # # Append the new reschedule datetime to additional_ride_details
     # if not ride.additional_ride_details:
     #     ride.additional_ride_details = str(reschedule_data.new_datetime)
     # else:
