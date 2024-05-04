@@ -622,13 +622,13 @@ async def reschedule_ride(
 
     # Mark the ride status as "Rescheduled"
     ride.ride_status = "Rescheduled"
-    # ride.additional_ride_details = str(reschedule_data.new_datetime)
+    ride.additional_ride_details = str(reschedule_data.new_datetime)
 
-    # # Append the new reschedule datetime to additional_ride_details
-    if not ride.additional_ride_details:
-        ride.additional_ride_details = str(reschedule_data.new_datetime)
-    else:
-        ride.additional_ride_details += f", {reschedule_data.new_datetime}"
+    # # # Append the new reschedule datetime to additional_ride_details
+    # if not ride.additional_ride_details:
+    #     ride.additional_ride_details = str(reschedule_data.new_datetime)
+    # else:
+    #     ride.additional_ride_details += f", {reschedule_data.new_datetime}"
 
     db.commit()
     db.refresh(ride)
