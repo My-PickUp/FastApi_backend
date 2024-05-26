@@ -400,8 +400,21 @@ async def create_user_subscription_and_rides(
             subscription_plan = payload.subscription_plan
             ride_details = payload.ride_details
 
+            existing_subscription = db.query(UsersSubscription).filter(
+                UsersSubscription.user_id == user_id,
+                UsersSubscription.subscription_plan == subscription_plan,
+                func.date(UsersSubscription.created_at) == datetime.utcnow().date(),
+                UsersSubscription.subscription_status == "active"
+            ).first()
+
+            if existing_subscription:
+                raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A subscription for the same plan already exists for today."
+            )
+
             # Expire existing active subscription for the same plan
-            expire_existing_subscription(user_id, subscription_plan)
+            # expire_existing_subscription(user_id, subscription_plan)
 
             # Create user subscription
             user_subscription = UsersSubscription(
