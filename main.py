@@ -128,7 +128,7 @@ def create_jwt_token(phone_number: str, expires_delta: timedelta = None):
     return encoded_jwt
 
 
-def expire_existing_subscription(user_id: int, subscription_plan: str):
+def expire_existing_subscription(user_id: int, subscription_plan: str, current_date: datetime):
     try:
         db = SessionLocal()
         existing_subscription = (
@@ -137,6 +137,7 @@ def expire_existing_subscription(user_id: int, subscription_plan: str):
                 UsersSubscription.user_id == user_id,
                 UsersSubscription.subscription_plan == subscription_plan,
                 UsersSubscription.subscription_status == "active",
+                func.date(UsersSubscription.created_at) < func.date(current_date)
             )
             .first()
         )
@@ -414,7 +415,7 @@ async def create_user_subscription_and_rides(
             )
 
             # Previous week subscriptions gets expired for the same user when a new subscription is recorded.
-            expire_existing_subscription(user_id, subscription_plan)
+            expire_existing_subscription(user_id, subscription_plan, datetime.utcnow())
 
             # Create user subscription
             user_subscription = UsersSubscription(
