@@ -138,7 +138,7 @@ def expire_existing_subscription(user_id: int, subscription_plan: str):
                 UsersSubscription.subscription_plan == subscription_plan,
                 UsersSubscription.subscription_status == "active",
                 UsersSubscription.payment_status == 'true',
-                func.date(UsersSubscription.created_at) != datetime.utcnow().date()
+                func.date(UsersSubscription.created_at) < datetime.utcnow().date()
             )
             .first()
         )
