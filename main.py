@@ -137,7 +137,6 @@ def expire_existing_subscription(user_id: int, subscription_plan: str):
                 UsersSubscription.user_id == user_id,
                 UsersSubscription.subscription_plan == subscription_plan,
                 UsersSubscription.subscription_status == "active",
-                UsersSubscription.created_at < datetime.now()
             )
             .first()
         )
