@@ -136,7 +136,8 @@ def expire_existing_subscription(user_id: int, subscription_plan: str):
             .filter(
                 UsersSubscription.user_id == user_id,
                 UsersSubscription.subscription_plan == subscription_plan,
-                UsersSubscription.subscription_status == "active"
+                UsersSubscription.subscription_status == "active",
+                func.date(UsersSubscription.created_at) != datetime.utcnow().date()
             )
             .first()
         )
@@ -413,8 +414,8 @@ async def create_user_subscription_and_rides(
                 detail="A subscription for the same plan already exists for today."
             )
 
-            # Expire existing active subscription for the same plan
-            # expire_existing_subscription(user_id, subscription_plan)
+            # Previous week subscriptions gets expired for the same user when a new subscription is recorded.
+            expire_existing_subscription(user_id, subscription_plan)
 
             # Create user subscription
             user_subscription = UsersSubscription(
