@@ -3,7 +3,7 @@ import random
 from sqlalchemy import exists, and_
 from sqlalchemy import text
 import pytz
-
+from typing import Optional
 from typing import List
 from fastapi import Depends, FastAPI, Request, HTTPException, status, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -1032,7 +1032,7 @@ def get_payment_status(user_id : str,
 
 
 @app.get("/Latest_subscription_ride_count/")
-def get_ride_count_status(user_id: str,
+def get_ride_count_status(user_id: Optional[str] = None,
                           token: str = Header(..., description="JWT token for authentication"),
                           phone_number: str = Header(..., description="User's phone number"),
                           db: Session = Depends(get_db)):
@@ -1049,7 +1049,18 @@ def get_ride_count_status(user_id: str,
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-       # count of no of rides in the latest subscription
+
+    '''
+    Handling of null string to None
+    '''
+
+    if user_id == 'null':
+        user_id = None
+
+
+    '''
+    count of no of rides in the latest subscription
+    '''
 
     subscription_ids = (
         db.query(model.UsersSubscription.id)
