@@ -35,7 +35,7 @@ class UsersSubscription(Base):
     payment_status = Column(String,default=False,nullable=False)
     subscription_status = Column(String, default="active")
     created_at = Column(DateTime, default=func.now())
-    # subscription_cost  = Column(Float, nullable=False)
+    subscription_cost  = Column(Float, nullable=False)
 
     user = relationship("User", back_populates="subscriptions", remote_side="User.id")  # Set remote_side to User.id
     rides = relationship("RidesDetail", back_populates="subscription")
