@@ -1186,7 +1186,7 @@ def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchem
     if not subscription:
         raise HTTPException(status_code=404, detail="Subscription not found")
     
-    if act in [True,False]:
+    if act is not None:
         subscription.payment_status = act
         if sub_cost is not None:
             subscription.subscription_cost = sub_cost
