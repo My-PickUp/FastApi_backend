@@ -1188,13 +1188,13 @@ def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchem
     
     if act is not None:
         subscription.payment_status = act
-        if sub_cost is not None:
-            subscription.subscription_cost = sub_cost
 
-        db.commit()
-        return {"status": "success", "message": "Subscription updated successfully"}
-    else:
-        return {"Error": "Invalid data sent."}
+    if sub_cost is not None:
+        subscription.subscription_cost = sub_cost
+
+    db.commit()
+    return {"status": "success", "message": "Subscription updated successfully"}
+
 
 @app.get("/rescheduled-rides", response_model=List[GetRideDetailSchema])
 def get_rescheduled_rides(
