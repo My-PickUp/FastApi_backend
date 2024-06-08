@@ -1179,20 +1179,21 @@ def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchem
 
     sub_id = act_st.subs_id
     act = act_st.to_active
+    sub_cost = act_st.subs_cost
     
     subscription = db.query(UsersSubscription).filter(UsersSubscription.id == sub_id).first()
+
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
     
-    if act == True:
-        subscription.payment_status = True
-    elif act == False:
-        subscription.payment_status = False
+    if act in [True,False]:
+        subscription.payment_status = act
+        subscription.subscription_cost = sub_cost
+
+        db.commit()
+        return {"status": "success", "message": "Subscription updated successfully"}
     else:
-        return {"Error":"Invalid data sent."}
-        
-    db.commit()
-    
-    return{True}
-    
+        return {"Error": "Invalid data sent."}
 
 @app.get("/rescheduled-rides", response_model=List[GetRideDetailSchema])
 def get_rescheduled_rides(
