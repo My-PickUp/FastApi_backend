@@ -1188,7 +1188,8 @@ def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchem
     
     if act in [True,False]:
         subscription.payment_status = act
-        subscription.subscription_cost = sub_cost
+        if sub_cost is not None:
+            subscription.subscription_cost = sub_cost
 
         db.commit()
         return {"status": "success", "message": "Subscription updated successfully"}
