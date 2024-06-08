@@ -32,7 +32,7 @@ class UsersSubscription(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     subscription_plan = Column(String, nullable=False)
-    payment_status = Column(String,default=False,nullable=False)
+    payment_status = Column(String,default=False,nullable=True)
     subscription_status = Column(String, default="active")
     created_at = Column(DateTime, default=func.now())
     subscription_cost  = Column(Float, nullable=True)

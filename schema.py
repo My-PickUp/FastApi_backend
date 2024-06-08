@@ -114,6 +114,6 @@ class UpdateActivityStatus(BaseModel):
     is_active: bool
     
 class UpdatePaymentStatusSchema(BaseModel):
-    to_active : bool
+    to_active : Optional[bool] = None
     subs_id : int
     subs_cost: Optional[float] = None
