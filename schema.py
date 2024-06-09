@@ -117,3 +117,13 @@ class UpdatePaymentStatusSchema(BaseModel):
     to_active : Optional[bool] = None
     subs_id : int
     subs_cost: Optional[float] = None
+
+class GetSubscriptionDetailsPerCustomer(BaseModel):
+
+    subscription_id: int
+    user_id: int
+    created_at: datetime
+    subscription_plan: str
+
+
+

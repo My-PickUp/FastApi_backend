@@ -11,6 +11,7 @@ from database import engine, get_db, Session, SessionLocal
 from models import User,Price_per_trip, VerificationCode, UsersSubscription, RidesDetail, Base,Address
 from schema import UserSchema,GetPriceSchema,PriceCreateSchema,UserUpdateSchema, RideDetailSchema,UpdateRideStatusSchema, GetRideDetailSchema, CreateUserSubscriptionAndRidesSchema,UserCreate,AddressCreateSchema,AddressSchema,RescheduleRideSchema, UserId
 from datetime import datetime, timezone,timedelta
+from schema import GetSubscriptionDetailsPerCustomer
 from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -1194,7 +1195,34 @@ def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchem
 
     db.commit()
     return {"status": "success", "message": "Subscription updated successfully"}
+@app.get('/fetch_latest_subscription_id_per_customer/')
+def get_latest_subscription_id_per_customer(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
 
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    find_latest_subscription_created_date  = db.query(func.max(UsersSubscription.created_at)).filter(
+        UsersSubscription.user_id == user_id
+    ).scalar()
+
+    if not find_latest_subscription_created_date:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+
+    latest_subscription = db.query(UsersSubscription).filter(
+        UsersSubscription.user_id == user_id,
+        UsersSubscription.created_at == find_latest_subscription_created_date
+    ).first()
+
+    if not latest_subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+
+    return GetSubscriptionDetailsPerCustomer(
+        subscription_id=latest_subscription.id,
+        user_id=latest_subscription.user_id,
+        created_at=latest_subscription.created_at,
+        subscription_plan=latest_subscription.subscription_plan
+    )
 
 @app.get("/rescheduled-rides", response_model=List[GetRideDetailSchema])
 def get_rescheduled_rides(
