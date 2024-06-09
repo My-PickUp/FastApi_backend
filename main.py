@@ -1196,7 +1196,29 @@ def update_active_status(user_id : int, act_st : schema.UpdatePaymentStatusSchem
     db.commit()
     return {"status": "success", "message": "Subscription updated successfully"}
 @app.get('/fetch_latest_subscription_id_per_customer/')
-def get_latest_subscription_id_per_customer(user_id: int, db: Session = Depends(get_db)):
+def get_latest_subscription_id_per_customer(user_id: int, phone_number: str = Header(..., description="User's phone number"), token: str = Header(..., description="JWT token for authentication"), db: Session = Depends(get_db)):
+
+    '''
+    Verifying the JWT token
+    :param user_id:
+    :param token:
+    :param db:
+    :return:
+    '''
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Ensure that the phone number from the headers matches the one in the JWT token
+        if payload.get("sub") != phone_number:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
