@@ -2,10 +2,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 
-DATABASE_URL = 'postgresql://telkestech%40gmail.com:ShXixZT5YV6u@ep-red-bird-68334114.ap-southeast-1.aws.neon.tech/Customer_Driver?sslmode=require'
+
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
