@@ -465,6 +465,10 @@ async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
     if re.search(pattern, user_create.phone_number):
         raise HTTPException(status_code=400, detail="Phone number cannot contain special characters")
 
+    if len(user_create.phone_number) < 10 or len(user_create.phone_number) > 10:
+        raise HTTPException(status_code=400, detail="Invalid phone number")
+
+
     db_user = User(**user_create.dict(), created_at=datetime.now(), updated_at=datetime.now())
     db.add(db_user)
     db.commit()
