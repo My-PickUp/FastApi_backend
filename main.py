@@ -2,6 +2,7 @@ import string, requests
 import random
 from sqlalchemy import exists, and_
 from sqlalchemy import text
+import re
 import pytz
 from typing import Optional
 from typing import List
@@ -457,6 +458,13 @@ async def create_user_subscription_and_rides(
 
 @app.post("/leadtodb", response_model=str)
 async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
+    pattern = r'[^a-zA-Z0-9\s@._-]'
+    if re.search(pattern, user_create.name):
+        raise HTTPException(status_code=400, detail="Username cannot contain special characters")
+
+    if re.search(pattern, user_create.phone_number.replace('@', '').replace('.', '').replace('_', '').replace('-', '')):
+        raise HTTPException(status_code=400, detail="Phone cannot contain special characters")
+
     db_user = User(**user_create.dict(), created_at=datetime.now(), updated_at=datetime.now())
     db.add(db_user)
     db.commit()
