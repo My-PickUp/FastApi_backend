@@ -462,8 +462,8 @@ async def create_user(user_create: UserCreate, db: Session = Depends(get_db)):
     if re.search(pattern, user_create.name):
         raise HTTPException(status_code=400, detail="Username cannot contain special characters")
 
-    if re.search(pattern, user_create.phone_number.replace('@', '').replace('.', '').replace('_', '').replace('-', '')):
-        raise HTTPException(status_code=400, detail="Phone cannot contain special characters")
+    if re.search(pattern, user_create.phone_number):
+        raise HTTPException(status_code=400, detail="Phone number cannot contain special characters")
 
     db_user = User(**user_create.dict(), created_at=datetime.now(), updated_at=datetime.now())
     db.add(db_user)
