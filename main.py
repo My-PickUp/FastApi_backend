@@ -1133,7 +1133,7 @@ def change_address_of_user( user_id : int, old_address_type : str ,new_address :
 #Make an api to change the phone number of user
 @app.put('/update_phone_number/')
 def update_phone_number(user_id: int, phone_number_data: schema.UpdatePhoneNumberSchema, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).get(user_id)
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
