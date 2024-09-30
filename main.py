@@ -1150,9 +1150,10 @@ def update_phone_number(user_id: int, phone_number_data: schema.UpdatePhoneNumbe
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Extract the phone_number value from the schema
+    existing_user = db.query(User).filter(User.phone_number == phone_number_data.phone_number).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Phone number already exists")
     new_phone_number = phone_number_data.phone_number
-
     # Check if the new phone number is different from the existing one
     if user.phone_number != new_phone_number:
         user.phone_number = new_phone_number
