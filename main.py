@@ -1154,13 +1154,9 @@ def update_phone_number(user_id: int, phone_number_data: schema.UpdatePhoneNumbe
     if existing_user:
         raise HTTPException(status_code=400, detail="Phone number already exists")
     new_phone_number = phone_number_data.phone_number
-    # Check if the new phone number is different from the existing one
-    if user.phone_number != new_phone_number:
-        user.phone_number = new_phone_number
-        db.commit()
-        return {"message": f"Phone number updated to {new_phone_number}"}
-    else:
-        return {"message": "Phone number is already set to the provided value"}
+    user.phone_number = new_phone_number
+    db.commit()
+    return {"message": f"Phone number updated to {new_phone_number}"}
 
 #Make an api to change the status of user - active or inactive
 @app.put('/update_active_status/')
